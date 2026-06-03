@@ -34,16 +34,6 @@ const authenticate = async (req, res, next) => {
         status: true,
         createdAt: true,
         updatedAt: true,
-        vendorProfile: {
-          select: {
-            id: true,
-          },
-        },
-        coupleProfile: {
-          select: {
-            id: true,
-          },
-        },
       },
     });
 
@@ -58,11 +48,8 @@ const authenticate = async (req, res, next) => {
       name: user.name,
       role: user.role,
       status: user.status,
-
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
-      vendorProfileId: user.vendorProfile ? user.vendorProfile.id : null,
-      coupleProfileId: user.coupleProfile ? user.coupleProfile.id : null,
     };
     // Add user to request object
     req.user = sendUser;

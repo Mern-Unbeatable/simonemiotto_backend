@@ -21,15 +21,13 @@ class CityService {
       data: {
         name: categoryName,
         slug,
-        stateId: data.stateId,
       },
     });
   }
 
-  async getAll(stateId) {
+  async getAll() {
     return prisma.city.findMany({
-      where: { stateId },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: 'asc' },
     });
   }
 

@@ -7,7 +7,6 @@ const createCitySchema = Joi.object({
     .lowercase()
     .pattern(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
     .optional(),
-  stateId: Joi.string().required(),
 });
 
 const updateCitySchema = Joi.object({

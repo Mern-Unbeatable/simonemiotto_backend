@@ -127,8 +127,8 @@ app.get('/', (req, res) => {
   res.formatResponse(
     {
       version: '1.0.0',
-      name: 'Brittanirisher API',
-      description: 'RESTful API for Brittanirisher job management platform',
+      name: 'Simonemiotto API',
+      description: 'RESTful API for Simonemiotto Surgeons management platform',
       author: 'Bikash Roy',
       contact: {
         email: 'bikashroydt@gmail.com',

@@ -7,6 +7,7 @@ const router = express.Router();
 const authRoutes = require('../modules/auth/auth.routes');
 const userRoutes = require('../modules/user/user.routes');
 const uploadRoutes = require('../modules/upload/upload.route');
+const cityRoutes = require('../modules/city/city.route');
 
 const apiDocsHandler = require('../modules/docs/apiDocsHandler');
 
@@ -33,4 +34,5 @@ router.get('/docs', apiDocsHandler);
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
 router.use('/upload', uploadRoutes);
+router.use('/cities', cityRoutes);
 module.exports = router;
