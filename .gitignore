@@ -1,0 +1,166 @@
+# ────────────────────────────────────────────────────────────────────
+# ENVIRONMENT VARIABLES
+# ────────────────────────────────────────────────────────────────────
+.env
+.env.local
+.env.production
+.env.development
+.env.test
+*.env
+!.env.example
+
+# ────────────────────────────────────────────────────────────────────
+# DEPENDENCIES
+# ────────────────────────────────────────────────────────────────────
+node_modules/
+.pnp
+.pnp.js
+
+# ────────────────────────────────────────────────────────────────────
+# RUNTIME DATA & LOGS
+# ────────────────────────────────────────────────────────────────────
+pids
+*.pid
+*.seed
+*.pid.lock
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# ────────────────────────────────────────────────────────────────────
+# COVERAGE & TESTING
+# ────────────────────────────────────────────────────────────────────
+lib-cov
+coverage/
+nyc_output/
+.nyc_output
+.coverage
+*.lcov
+.jest/
+!**/*.test.http
+
+# ────────────────────────────────────────────────────────────────────
+# UPLOADS & TEMPORARY FILES
+# ────────────────────────────────────────────────────────────────────
+tmp/
+temp/
+.tmp/
+.temp/
+
+# ────────────────────────────────────────────────────────────────────
+# BUILD OUTPUTS & CACHE
+# ────────────────────────────────────────────────────────────────────
+dist/
+build/
+out/
+.cache/
+.parcel-cache/
+.nuxt/
+.next/
+*.tsbuildinfo
+.eslintcache
+.stylelintcache
+docs/_build/
+
+# ────────────────────────────────────────────────────────────────────
+# EDITOR & IDE
+# ────────────────────────────────────────────────────────────────────
+# VS Code (Keeps main configs, ignores internal/workspace stuff)
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# JetBrains, Vim, Sublime
+.idea/
+*.swp
+*.swo
+*~
+*.sublime-workspace
+*.sublime-project
+
+# ────────────────────────────────────────────────────────────────────
+# OPERATING SYSTEMS
+# ────────────────────────────────────────────────────────────────────
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Linux
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# ────────────────────────────────────────────────────────────────────
+# PACKAGE MANAGERS (Cache only)
+# ────────────────────────────────────────────────────────────────────
+.npm
+.npmrc
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
+
+# ────────────────────────────────────────────────────────────────────
+# PRISMA, DOCKER & MONITORING
+# ────────────────────────────────────────────────────────────────────
+/prisma/generated/
+docker-compose.override.yml
+.docker/
+newrelic.js
+
+# ────────────────────────────────────────────────────────────────────
+# CERTIFICATES, KEYS & DATABASES
+# ────────────────────────────────────────────────────────────────────
+*.pem
+*.key
+*.crt
+*.csr
+*.p12
+*.pfx
+*.backup
+*.bak
+*.db
+*.sqlite
+*.sqlite3
+
+# ────────────────────────────────────────────────────────────────────
+# KEEP CERTAIN CONFIG FILES (Explicitly allowed)
+# ────────────────────────────────────────────────────────────────────
+!**/README.md
+!.eslintrc.js
+!.prettierrc
+!jest.config.js

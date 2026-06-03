@@ -1,0 +1,321 @@
+// schema.prisma
+// =============================================================
+// Sports Event Management Platform — Prisma schema
+// Derived strictly from the existing React frontend 
+// =============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// -----------------------------------------------------------------
+// ENUMS
+// -----------------------------------------------------------------
+
+enum Role {
+  USER
+  SURGEON
+  ADMIN
+}
+
+enum AccountStatus {
+  ACTIVE
+  PENDING_VERIFICATION
+  SUSPENDED
+  DEACTIVATED
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum OtpPurpose {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+  LOGIN_2FA
+}
+
+// -----------------------------------------------------------------
+// AUTH / USERS
+// -----------------------------------------------------------------
+
+model User {
+  id            String        @id @default(cuid())
+  name          String
+  email         String        @unique
+  phone         String?
+  passwordHash  String
+  role          Role          @default(USER)
+  status        AccountStatus @default(PENDING_VERIFICATION)
+  profileStep   Int           @default(1)
+  isActive      Boolean       @default(true)
+  emailVerified Boolean       @default(false)
+  joinedAt      DateTime      @default(now())
+  lastLoginAt   DateTime?
+  avatarUrl     String?
+
+  // Relations
+  otpTokens      OtpToken[]
+  sessions       Session[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  subscriptions  Subscription[]
+  surgeonProfile SurgeonProfile?
+  reviews        Review[]
+
+  @@index([role, status])
+}
+
+model Session {
+  id           String    @id @default(cuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refreshToken String    @unique
+  userAgent    String?
+  ipAddress    String?
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  createdAt    DateTime  @default(now())
+
+  @@index([userId])
+}
+
+model OtpToken {
+  id         String     @id @default(cuid())
+  userId     String
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  codeHash   String
+  purpose    OtpPurpose
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime   @default(now())
+
+  @@index([userId, purpose])
+}
+
+// -----------------------------------------------------------------
+// Admin Profile
+// -----------------------------------------------------------------
+
+model SubscriptionTier {
+  id            String         @id @default(uuid())
+  name          String
+  description   String?
+  stripePriceId String?
+  durationDays  Int
+  features      String[]
+  price         Decimal        @db.Decimal(10, 2)
+  isDeleted     Boolean        @default(false)
+  createdAt     DateTime       @default(now())
+  promoCodes    PromoCode[]
+  subscriptions Subscription[]
+
+  @@map("subscription_plans")
+}
+
+model City {
+  id              String           @id @default(cuid())
+  name            String           @unique
+  slug            String
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  clinics         Clinic[]
+  surgeonProfiles SurgeonProfile[]
+}
+
+model Clinic {
+  id   String @id @default(cuid())
+  name String @unique
+  slug String
+
+  cityId String
+  city   City   @relation(fields: [cityId], references: [id], onDelete: Cascade)
+
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  surgeonProfiles SurgeonProfile[]
+}
+
+model PromoCode {
+  id        String    @id @default(uuid())
+  code      String    @unique // e.g., "SAVE20"
+  offerType OfferType
+
+  offerValue Decimal? @default(0)
+
+  expiryDate DateTime?
+  usageLimit Int?
+  usesCount  Int       @default(0)
+
+  // Relations
+  subscriptionTierId String?
+  tier               SubscriptionTier? @relation(fields: [subscriptionTierId], references: [id])
+  subscriptions      Subscription[] // Tracking redemptions
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([subscriptionTierId])
+}
+
+enum OfferType {
+  DISCOUNT
+  FREE_ACCESS
+  EXTRA_DAYS
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+model Subscription {
+  id                 String             @id @default(cuid())
+  userId             String
+  subscriptionTierId String
+  promoCodeId        String?
+  status             SubscriptionStatus @default(ACTIVE)
+  startDate          DateTime           @default(now())
+  endDate            DateTime
+
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tier      SubscriptionTier @relation(fields: [subscriptionTierId], references: [id])
+  promoCode PromoCode?       @relation(fields: [promoCodeId], references: [id])
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  payments  Payment[]
+
+  @@index([userId])
+  @@index([subscriptionTierId])
+  @@index([promoCodeId])
+}
+
+enum PaymentSUbStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  STRIPE
+  PAYPAL
+  CREDIT_CARD
+  CASH
+  BANK_TRANSFER
+}
+
+model Payment {
+  id             String       @id @default(cuid())
+  subscriptionId String
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  amount   Decimal
+  currency String           @default("EUR")
+  status   PaymentSUbStatus @default(PENDING)
+  method   PaymentMethod
+
+  gatewayTxnId String? @unique
+
+  failureReason String?
+  metadata      Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([subscriptionId])
+}
+
+// -----------------------------------------------------------------
+// SURGEON Profile
+// -----------------------------------------------------------------
+
+enum SurgeonStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+enum PaymentStatus {
+  UNPAID
+  ACTIVE
+  EXPIRED
+}
+
+model SurgeonProfile {
+  id                      String          @id @default(cuid())
+  userId                  String          @unique
+  user                    User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clinicId                String
+  clinic                  Clinic          @relation(fields: [clinicId], references: [id])
+  bio                     String?
+  name                    String
+  specialization          String
+  experience              String
+  education               String[]
+  language                String
+  areasExpertise          String[]
+  patientApproach         String
+  experienceYears         Int
+  createdAt               DateTime        @default(now())
+  updatedAt               DateTime        @updatedAt
+  surgeonPhotos           SurgeonPhotos[]
+  governmentIDFrontUrl    String?
+  governmentIDBackUrl     String?
+  boardRegistrationNumber String?
+  certifications          String[]
+  procedures              Json?
+  certificateUrls         String?
+  cityId                  String
+  city                    City            @relation(fields: [cityId], references: [id])
+  address                 String?
+  availability            String?
+  status                  SurgeonStatus   @default(PENDING)
+  paymentStatus           PaymentStatus   @default(UNPAID)
+  reviews                 Review[]
+
+  @@index([clinicId])
+  @@index([cityId])
+  @@index([specialization])
+}
+
+model SurgeonPhotos {
+  id        String   @id @default(cuid())
+  surgeonId String
+  url       String
+  order     Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  surgeon SurgeonProfile @relation(fields: [surgeonId], references: [id], onDelete: Cascade)
+
+  @@index([surgeonId])
+}
+
+model Review {
+  id      String  @id @default(cuid())
+  rating  Int
+  comment String?
+
+  patientId String
+  patient   User   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  surgeonProfileId String
+  surgeonProfile   SurgeonProfile @relation(fields: [surgeonProfileId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([patientId])
+  @@index([surgeonProfileId])
+}
