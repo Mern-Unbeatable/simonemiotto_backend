@@ -66,7 +66,6 @@ model User {
   sessions       Session[]
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
-  subscriptions  Subscription[]
   surgeonProfile SurgeonProfile?
   reviews        Review[]
 
@@ -145,7 +144,7 @@ model Clinic {
 }
 
 model PromoCode {
-  id        String    @id @default(uuid())
+  id        String    @id @default(cuid())
   code      String    @unique // e.g., "SAVE20"
   offerType OfferType
 
@@ -180,23 +179,24 @@ enum SubscriptionStatus {
 
 model Subscription {
   id                 String             @id @default(cuid())
-  userId             String
   subscriptionTierId String
   promoCodeId        String?
   status             SubscriptionStatus @default(ACTIVE)
   startDate          DateTime           @default(now())
   endDate            DateTime
   autoRenew          Boolean            @default(false)
+  surgeonProfileId   String
+  surgeonProfile     SurgeonProfile     @relation("SubHistory", fields: [surgeonProfileId], references: [id], onDelete: Cascade)
 
-  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activeForProfile SurgeonProfile? @relation("CurrentActiveSub")
+
   tier      SubscriptionTier @relation(fields: [subscriptionTierId], references: [id])
   promoCode PromoCode?       @relation(fields: [promoCodeId], references: [id])
-
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
   payments  Payment[]
 
-  @@index([userId])
+  @@index([surgeonProfileId])
   @@index([subscriptionTierId])
   @@index([promoCodeId])
 }
@@ -284,9 +284,15 @@ model SurgeonProfile {
   city                    City            @relation(fields: [cityId], references: [id])
   address                 String?
   availability            String?
-  status                  SurgeonStatus   @default(PENDING)
-  paymentStatus           PaymentStatus   @default(UNPAID)
-  reviews                 Review[]
+
+  currentSubscriptionId String?       @unique
+  currentSubscription   Subscription? @relation("CurrentActiveSub", fields: [currentSubscriptionId], references: [id], onDelete: SetNull)
+
+  subscriptions Subscription[] @relation("SubHistory")
+
+  status        SurgeonStatus @default(PENDING)
+  paymentStatus PaymentStatus @default(UNPAID)
+  reviews       Review[]
 
   @@index([clinicId])
   @@index([cityId])
