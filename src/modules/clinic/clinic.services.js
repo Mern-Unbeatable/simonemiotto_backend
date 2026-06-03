@@ -1,7 +1,7 @@
 const { prisma } = require('../../config/database');
 const { AppError } = require('../../middlewares/errorHandler');
 
-class CityService {
+class ClinicService {
   slugify(value) {
     return value
       .toLowerCase()
@@ -17,32 +17,29 @@ class CityService {
       ? this.slugify(data.slug)
       : this.slugify(categoryName);
 
-    return prisma.city.create({
+    return prisma.clinic.create({
       data: {
         name: categoryName,
         slug,
+        cityId: data.cityId,
       },
     });
   }
 
-  async getAll() {
-    return prisma.city.findMany({
-      include: {
-        clinics: {
-          orderBy: { createdAt: 'asc' },
-        },
-      },
+  async getAll(cityId) {
+    return prisma.clinic.findMany({
+      where: { cityId },
       orderBy: { createdAt: 'asc' },
     });
   }
 
   async getById(id) {
-    const category = await prisma.city.findUnique({
+    const category = await prisma.clinic.findUnique({
       where: { id },
     });
 
     if (!category) {
-      throw new AppError('city not found', 404);
+      throw new AppError('clinic not found', 404);
     }
 
     return category;
@@ -60,7 +57,7 @@ class CityService {
       updateData.slug = this.slugify(data.name);
     }
 
-    return prisma.city.update({
+    return prisma.clinic.update({
       where: { id },
       data: updateData,
     });
@@ -69,7 +66,7 @@ class CityService {
   async delete(id) {
     await this.getById(id);
 
-    await prisma.city.delete({
+    await prisma.clinic.delete({
       where: { id },
     });
 
@@ -77,4 +74,4 @@ class CityService {
   }
 }
 
-module.exports = CityService;
+module.exports = ClinicService;

@@ -8,6 +8,7 @@ const authRoutes = require('../modules/auth/auth.routes');
 const userRoutes = require('../modules/user/user.routes');
 const uploadRoutes = require('../modules/upload/upload.route');
 const cityRoutes = require('../modules/city/city.route');
+const clinicRoutes = require('../modules/clinic/clinic.route');
 
 const apiDocsHandler = require('../modules/docs/apiDocsHandler');
 
@@ -35,4 +36,5 @@ router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
 router.use('/upload', uploadRoutes);
 router.use('/cities', cityRoutes);
+router.use('/clinics', clinicRoutes);
 module.exports = router;
