@@ -106,13 +106,14 @@ model OtpToken {
 
 model SubscriptionTier {
   id            String         @id @default(uuid())
-  name          String
+  name          String         @unique
   description   String?
   stripePriceId String?
   durationDays  Int
   features      String[]
   price         Decimal        @db.Decimal(10, 2)
   isDeleted     Boolean        @default(false)
+  autoRenew     Boolean        @default(false)
   createdAt     DateTime       @default(now())
   promoCodes    PromoCode[]
   subscriptions Subscription[]
@@ -185,6 +186,7 @@ model Subscription {
   status             SubscriptionStatus @default(ACTIVE)
   startDate          DateTime           @default(now())
   endDate            DateTime
+  autoRenew          Boolean            @default(false)
 
   user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   tier      SubscriptionTier @relation(fields: [subscriptionTierId], references: [id])
@@ -260,6 +262,8 @@ model SurgeonProfile {
   clinic                  Clinic          @relation(fields: [clinicId], references: [id])
   bio                     String?
   name                    String
+  slug                    String          @unique
+  isVerified              Boolean         @default(false)
   specialization          String
   experience              String
   education               String[]
