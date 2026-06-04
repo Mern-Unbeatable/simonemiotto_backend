@@ -173,54 +173,49 @@ class PaymentService {
   }
 
   async createSubscriptionUpdateSession({
-    vendorId,
-    currentSubscription,
-    newPlan,
+    profileData,
+    amount,
+    subscriptionPlan,
+    promoCodeId,
+    daysToAdd,
   }) {
-    console.log(
-      'Creating subscription update session for vendorId:',
-      currentSubscription,
-    );
-
-    let stripeCustomerId = currentSubscription?.vendor?.stripeCustomerId;
+    let stripeCustomerId = profileData?.currentSubscription?.stripeCustomerId;
     if (!stripeCustomerId) {
       const customer = await stripe.customers.create({
-        email: currentSubscription.vendor.email,
-        name: currentSubscription.vendor.name,
+        email: profileData.email,
+        name: profileData.name,
         metadata: {
-          vendorId: vendorId,
+          surgeonProfileId: profileData.id,
+          userId: profileData.userId,
         },
       });
-
       stripeCustomerId = customer.id;
     }
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
-      mode: 'subscription',
+      mode: 'payment',
       customer: stripeCustomerId,
-
       line_items: [
         {
           price_data: {
             currency: 'usd',
             product_data: {
-              name: 'Subscribe to Professional Vendor Plan',
+              name: `Subscribe to ${subscriptionPlan.name}`,
+              description: `Plan access valid for ${daysToAdd} days`,
             },
-            unit_amount: Number(newPlan.priceMonthly) * 100,
-            recurring: {
-              interval: 'month',
-            },
+            unit_amount: Math.round(Number(amount) * 100),
           },
           quantity: 1,
         },
       ],
-
       metadata: {
         isPlanUpdate: 'true',
-        vendorId: vendorId,
-        oldSubscriptionId: currentSubscription.id,
-        newPlanId: newPlan.id,
+        surgeonProfileId: profileData.id,
+        subscriptionTierId: subscriptionPlan.id,
+        promoCodeId: promoCodeId || '',
+        durationDays: String(daysToAdd),
+        totalAmount: String(amount),
       },
       success_url: `${process.env.FRONTEND_URL}/dashboard/billing?success=true`,
       cancel_url: `${process.env.FRONTEND_URL}/dashboard/billing?canceled=true`,
@@ -234,85 +229,93 @@ class PaymentService {
 
   async handleSuccessfulPlanUpdate(session) {
     const meta = session.metadata;
-    const stripeSubscriptionId = session.subscription;
-    const stripeInvoiceId = session.invoice;
+    const stripeSubscriptionId = session.subscription || null;
 
-    // In subscription mode, payment_intent might be null. Fallback to invoice ID to prevent unique constraint crash.
-    const targetIntentId =
-      session.payment_intent || stripeInvoiceId || session.id;
+    const targetIntentId = session.payment_intent || session.id;
 
-    // 1. Prevent duplicate processing (Fixes Prisma P2002 Unique Constraint Error)
     if (targetIntentId) {
       const existingPayment = await prisma.payment.findUnique({
-        where: { stripeIntentId: targetIntentId },
+        where: { gatewayTxnId: targetIntentId },
       });
 
-      // If payment already exists, acknowledge and exit early to prevent duplication
       if (existingPayment) {
         console.log(
-          `[Webhook] Payment ${targetIntentId} already processed. Skipping to avoid duplication.`,
+          `[Webhook] Payment ${targetIntentId} already processed. Skipping to prevent duplication.`,
         );
         return;
       }
     }
 
-    // 2. Extract precise subscription period dates provided by Stripe (converted from seconds to milliseconds)
-    const startsAt = session.current_period_start
-      ? new Date(session.current_period_start * 1000)
-      : new Date();
+    const startDate = new Date();
+    const endDate = new Date();
 
-    const endsAt = session.current_period_end
-      ? new Date(session.current_period_end * 1000)
-      : new Date();
-
-    // Fallback to default 30 days if Stripe period end timestamp is not present
-    if (!session.current_period_end) {
-      endsAt.setDate(startsAt.getDate() + 30);
+    if (meta.durationDays) {
+      endDate.setDate(startDate.getDate() + parseInt(meta.durationDays, 10));
+    } else {
+      endDate.setDate(startDate.getDate() + 30);
     }
 
-    // 3. Execute database operations inside a Prisma Transaction
     await prisma.$transaction(async (tx) => {
-      // A. Expire the old subscription only if it exists (handles new vendors with no previous plan)
-      if (meta.oldSubscriptionId) {
-        await tx.vendorSubscription.update({
-          where: { id: meta.oldSubscriptionId },
+      if (meta.promoCodeId) {
+        await tx.promoCode.update({
+          where: { id: meta.promoCodeId },
+          data: { usesCount: { increment: 1 } },
+        });
+      }
+
+      const existingActiveProfile = await tx.surgeonProfile.findUnique({
+        where: { id: meta.surgeonProfileId },
+        select: { currentSubscriptionId: true },
+      });
+
+      if (existingActiveProfile?.currentSubscriptionId) {
+        await tx.subscription.update({
+          where: { id: existingActiveProfile.currentSubscriptionId },
           data: { status: 'EXPIRED' },
         });
       }
 
-      // B. Create the new subscription record
-      const newSubscription = await tx.vendorSubscription.create({
+      const newSubscription = await tx.subscription.create({
         data: {
-          vendorId: meta.vendorId,
-          planId: meta.newPlanId,
+          surgeonProfileId: meta.surgeonProfileId,
+          subscriptionTierId: meta.subscriptionTierId,
+          promoCodeId: meta.promoCodeId || null,
           status: 'ACTIVE',
           stripeSubscriptionId: stripeSubscriptionId,
-          startsAt,
-          endsAt,
+          startDate,
+          endDate,
+          autoRenew: false,
         },
       });
 
-      // C. Update Vendor Profile with the new active subscription ID and sync stripeCustomerId
-      await tx.vendorProfile.update({
-        where: { id: meta.vendorId },
+      // D. Update the target profile to establish the primary One-to-One operational pointer link
+      await tx.surgeonProfile.update({
+        where: { id: meta.surgeonProfileId },
         data: {
           currentSubscriptionId: newSubscription.id,
-          stripeCustomerId: session.customer, // Save or sync the customer ID
+          paymentStatus: 'ACTIVE',
         },
       });
 
-      // D. Log the payment history record securely
       await tx.payment.create({
         data: {
-          vendorId: meta.vendorId,
           subscriptionId: newSubscription.id,
-          amount: (session.amount_total || 0) / 100, // Convert cents to dollars/main currency
+          amount: (session.amount_total || 0) / 100,
+          currency: (session.currency || 'EUR').toUpperCase(),
           status: 'SUCCESS',
-          stripeIntentId: targetIntentId,
-          purchaseDate: new Date(),
+          method: 'STRIPE',
+          gatewayTxnId: targetIntentId,
+          metadata: {
+            stripeCustomerId: session.customer,
+            checkoutSessionId: session.id,
+          },
         },
       });
     });
+
+    console.log(
+      `[Webhook] Successfully activated subscription ${meta.subscriptionTierId} for surgeon ${meta.surgeonProfileId}`,
+    );
   }
 }
 

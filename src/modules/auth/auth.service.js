@@ -193,18 +193,18 @@ class AuthService {
         throw new AppError('Invalid email or password', 401);
       }
 
-      if (!user.emailVerified || user.status !== 'ACTIVE') {
-        const otp = await this.sendRegistrationOtp(user);
+      // if (!user.emailVerified || user.status !== 'ACTIVE') {
+      //   const otp = await this.sendRegistrationOtp(user);
 
-        console.log(
-          `User ${user.email} attempted to login without verified email. OTP resent: ${otp}`,
-        );
+      //   console.log(
+      //     `User ${user.email} attempted to login without verified email. OTP resent: ${otp}`,
+      //   );
 
-        throw new AppError(
-          'Email not verified, send otp in your email and verify it',
-          403,
-        );
-      }
+      //   throw new AppError(
+      //     'Email not verified, send otp in your email and verify it',
+      //     403,
+      //   );
+      // }
 
       delete user.passwordHash;
 

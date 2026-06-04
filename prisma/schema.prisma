@@ -178,17 +178,17 @@ enum SubscriptionStatus {
 }
 
 model Subscription {
-  id                 String             @id @default(cuid())
-  subscriptionTierId String
-  promoCodeId        String?
-  status             SubscriptionStatus @default(ACTIVE)
-  startDate          DateTime           @default(now())
-  endDate            DateTime
-  autoRenew          Boolean            @default(false)
-  surgeonProfileId   String
-  surgeonProfile     SurgeonProfile     @relation("SubHistory", fields: [surgeonProfileId], references: [id], onDelete: Cascade)
-
-  activeForProfile SurgeonProfile? @relation("CurrentActiveSub")
+  id                   String             @id @default(cuid())
+  subscriptionTierId   String
+  promoCodeId          String?
+  status               SubscriptionStatus @default(ACTIVE)
+  startDate            DateTime           @default(now())
+  endDate              DateTime
+  autoRenew            Boolean            @default(false)
+  surgeonProfileId     String
+  surgeonProfile       SurgeonProfile     @relation("SubHistory", fields: [surgeonProfileId], references: [id], onDelete: Cascade)
+  stripeSubscriptionId String?            @unique
+  activeForProfile     SurgeonProfile?    @relation("CurrentActiveSub")
 
   tier      SubscriptionTier @relation(fields: [subscriptionTierId], references: [id])
   promoCode PromoCode?       @relation(fields: [promoCodeId], references: [id])
