@@ -116,6 +116,7 @@ $RECYCLE.BIN/
 *.msm
 *.msp
 *.lnk
+uploads/
 
 # Linux
 .fuse_hidden*

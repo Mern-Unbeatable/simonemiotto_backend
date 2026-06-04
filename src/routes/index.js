@@ -11,6 +11,7 @@ const cityRoutes = require('../modules/city/city.route');
 const clinicRoutes = require('../modules/clinic/clinic.route');
 const subscriptionPlanRoutes = require('../modules/subscriptionPlan/subscriptionPlan.route');
 const surgeonProfileRoutes = require('../modules/surgeonProfile/surgeonProfile.route');
+const promoRoutes = require('../modules/promo/promo.route');
 
 const apiDocsHandler = require('../modules/docs/apiDocsHandler');
 
@@ -41,4 +42,5 @@ router.use('/cities', cityRoutes);
 router.use('/clinics', clinicRoutes);
 router.use('/subscription-plans', subscriptionPlanRoutes);
 router.use('/surgeon-profiles', surgeonProfileRoutes);
+router.use('/promo-code', promoRoutes);
 module.exports = router;
