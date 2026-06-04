@@ -187,7 +187,8 @@ model Subscription {
   autoRenew            Boolean            @default(false)
   surgeonProfileId     String
   surgeonProfile       SurgeonProfile     @relation("SubHistory", fields: [surgeonProfileId], references: [id], onDelete: Cascade)
-  stripeSubscriptionId String?            @unique
+  stripeSubscriptionId String?
+  stripeCustomerId     String?
   activeForProfile     SurgeonProfile?    @relation("CurrentActiveSub")
 
   tier      SubscriptionTier @relation(fields: [subscriptionTierId], references: [id])

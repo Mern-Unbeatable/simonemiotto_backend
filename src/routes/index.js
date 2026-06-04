@@ -44,5 +44,5 @@ router.use('/clinics', clinicRoutes);
 router.use('/subscription-plans', subscriptionPlanRoutes);
 router.use('/surgeon-profiles', surgeonProfileRoutes);
 router.use('/promo-code', promoRoutes);
-router.use('/apply-subscription', applySubscriptionRoutes);
+router.use('/subscription', applySubscriptionRoutes);
 module.exports = router;

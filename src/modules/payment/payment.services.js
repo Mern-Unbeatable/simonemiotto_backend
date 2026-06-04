@@ -180,6 +180,7 @@ class PaymentService {
     daysToAdd,
   }) {
     let stripeCustomerId = profileData?.currentSubscription?.stripeCustomerId;
+
     if (!stripeCustomerId) {
       const customer = await stripe.customers.create({
         email: profileData.email,
@@ -192,9 +193,11 @@ class PaymentService {
       stripeCustomerId = customer.id;
     }
 
+    const planDays = parseInt(daysToAdd, 10) || 30;
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
-      mode: 'payment',
+      mode: 'subscription',
       customer: stripeCustomerId,
       line_items: [
         {
@@ -205,6 +208,10 @@ class PaymentService {
               description: `Plan access valid for ${daysToAdd} days`,
             },
             unit_amount: Math.round(Number(amount) * 100),
+            recurring: {
+              interval: 'day',
+              interval_count: planDays,
+            },
           },
           quantity: 1,
         },
@@ -229,9 +236,8 @@ class PaymentService {
 
   async handleSuccessfulPlanUpdate(session) {
     const meta = session.metadata;
-    const stripeSubscriptionId = session.subscription || null;
-
-    const targetIntentId = session.payment_intent || session.id;
+    const stripeSubscriptionId = session.subscription;
+    const targetIntentId = session.invoice || session.id;
 
     if (targetIntentId) {
       const existingPayment = await prisma.payment.findUnique({
@@ -240,7 +246,7 @@ class PaymentService {
 
       if (existingPayment) {
         console.log(
-          `[Webhook] Payment ${targetIntentId} already processed. Skipping to prevent duplication.`,
+          `[Webhook] Transaction ${targetIntentId} already processed. Skipping to prevent duplication.`,
         );
         return;
       }
@@ -249,14 +255,14 @@ class PaymentService {
     const startDate = new Date();
     const endDate = new Date();
 
-    if (meta.durationDays) {
+    if (meta && meta.durationDays) {
       endDate.setDate(startDate.getDate() + parseInt(meta.durationDays, 10));
     } else {
       endDate.setDate(startDate.getDate() + 30);
     }
 
     await prisma.$transaction(async (tx) => {
-      if (meta.promoCodeId) {
+      if (meta && meta.promoCodeId) {
         await tx.promoCode.update({
           where: { id: meta.promoCodeId },
           data: { usesCount: { increment: 1 } },
@@ -275,6 +281,7 @@ class PaymentService {
         });
       }
 
+      // C. Record the new subscription instance inside your database
       const newSubscription = await tx.subscription.create({
         data: {
           surgeonProfileId: meta.surgeonProfileId,
@@ -282,13 +289,13 @@ class PaymentService {
           promoCodeId: meta.promoCodeId || null,
           status: 'ACTIVE',
           stripeSubscriptionId: stripeSubscriptionId,
+          stripeCustomerId: session.customer,
           startDate,
           endDate,
-          autoRenew: false,
+          autoRenew: true,
         },
       });
 
-      // D. Update the target profile to establish the primary One-to-One operational pointer link
       await tx.surgeonProfile.update({
         where: { id: meta.surgeonProfileId },
         data: {
@@ -301,13 +308,14 @@ class PaymentService {
         data: {
           subscriptionId: newSubscription.id,
           amount: (session.amount_total || 0) / 100,
-          currency: (session.currency || 'EUR').toUpperCase(),
+          currency: (session.currency || 'USD').toUpperCase(),
           status: 'SUCCESS',
           method: 'STRIPE',
           gatewayTxnId: targetIntentId,
           metadata: {
             stripeCustomerId: session.customer,
             checkoutSessionId: session.id,
+            invoiceId: session.invoice,
           },
         },
       });

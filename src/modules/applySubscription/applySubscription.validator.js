@@ -5,4 +5,12 @@ const updateSubscriptionSchema = Joi.object({
   promoCode: Joi.string().trim().uppercase().allow(null, '').optional(),
 });
 
-module.exports = { updateSubscriptionSchema };
+const updateAutoRenewSubscriptionSchema = Joi.object({
+  subscriptionId: Joi.string().trim().required(),
+  autoRenew: Joi.boolean().required(),
+});
+
+module.exports = {
+  updateSubscriptionSchema,
+  updateAutoRenewSubscriptionSchema,
+};

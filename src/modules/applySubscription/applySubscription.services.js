@@ -1,6 +1,9 @@
 const { prisma } = require('../../config/database');
 const { AppError } = require('../../middlewares/errorHandler');
 const PaymentService = require('../payment/payment.services');
+const Stripe = require('stripe');
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 class ApplySubscriptionService {
   constructor() {
@@ -108,6 +111,50 @@ class ApplySubscriptionService {
         };
       });
     }
+  }
+
+  async toggleAutoRenew(userId, subscriptionId, autoRenew) {
+    const subscription = await prisma.subscription.findFirst({
+      where: {
+        id: subscriptionId,
+        surgeonProfile: { userId: userId },
+      },
+    });
+
+    if (!subscription) {
+      throw new AppError('Subscription not found or unauthorized', 404);
+    }
+
+    const isAutoRenewEnabled = Boolean(autoRenew);
+    if (subscription.stripeSubscriptionId) {
+      try {
+        await stripe.subscriptions.update(subscription.stripeSubscriptionId, {
+          cancel_at_period_end: !isAutoRenewEnabled,
+        });
+      } catch (stripeError) {
+        console.error(
+          '[Stripe Error] Failed to update subscription:',
+          stripeError,
+        );
+        throw new AppError(
+          'Failed to sync changes with Stripe. Please try again.',
+          500,
+        );
+      }
+    }
+
+    const updatedSubscription = await prisma.subscription.update({
+      where: { id: subscriptionId },
+      data: {
+        autoRenew: isAutoRenewEnabled,
+      },
+    });
+
+    return {
+      subscriptionId: updatedSubscription.id,
+      autoRenew: updatedSubscription.autoRenew,
+      stripeSynced: !!subscription.stripeSubscriptionId,
+    };
   }
 }
 
