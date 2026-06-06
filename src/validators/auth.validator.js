@@ -34,7 +34,7 @@ const registerSchema = Joi.object({
   lastName: Joi.string().min(1).max(150).trim(),
   email,
   password: strongPassword,
-  role: Joi.string().valid('COUPLE', 'VENDOR', 'ADMIN').default('COUPLE'),
+  role: Joi.string().valid('USER', 'SURGEON', 'ADMIN').default('USER'),
 }).or('name', 'firstName');
 
 /**
