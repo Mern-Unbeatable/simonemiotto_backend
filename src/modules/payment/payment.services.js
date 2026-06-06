@@ -4,175 +4,6 @@ const emailEmitter = require('../../utils/eventEmitter');
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 class PaymentService {
-  async createRegistrationCheckoutSession({
-    subscriptionPlan,
-    vendorData,
-    imageUrls,
-    hashedPassword,
-  }) {
-    const {
-      name,
-      email,
-      location,
-      businessName,
-      experienceYears,
-      highlightedServices,
-      speciality,
-      aboutMe,
-      packages,
-      packageId,
-      categoryId,
-      phone,
-      cityId,
-      stateId,
-    } = vendorData;
-
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      mode: 'subscription',
-      customer_email: email.toLowerCase(),
-      // line_items: [
-      //   {
-      //     price: subscriptionPlan.stripePriceId,
-      //     quantity: 1,
-      //   },
-      // ],
-      line_items: [
-        {
-          price_data: {
-            currency: 'usd',
-            product_data: {
-              name: 'Subscribe to Professional Vendor Plan',
-            },
-            unit_amount: subscriptionPlan.priceMonthly * 100,
-            recurring: {
-              interval: 'month',
-            },
-          },
-          quantity: 1,
-        },
-      ],
-
-      metadata: {
-        isPaidRegistration: 'true',
-        name,
-        email: email.toLowerCase(),
-        passwordHash: hashedPassword,
-        businessName,
-        location,
-        experienceYears,
-        speciality,
-        aboutMe,
-        categoryId,
-        phone: phone || '',
-        highlightedServices: JSON.stringify(highlightedServices || []),
-        imageUrls: JSON.stringify(imageUrls || []),
-        packages: JSON.stringify(packages || []),
-        packageId: packageId,
-        cityId: cityId,
-        stateId: stateId,
-      },
-      success_url: `${process.env.FRONTEND_URL}/registration-success?success=true`,
-      cancel_url: `${process.env.FRONTEND_URL}/pricing?canceled=true`,
-    });
-
-    return {
-      requiresPayment: true,
-      url: session.url,
-    };
-  }
-
-  async handleSuccessfulRegistrationPayment(session) {
-    const meta = session.metadata;
-
-    const startsAt = new Date();
-    const endsAt = new Date();
-    endsAt.setDate(startsAt.getDate() + 30);
-
-    const highlightedServices = JSON.parse(meta.highlightedServices);
-    const imageUrls = JSON.parse(meta.imageUrls);
-    const packages = JSON.parse(meta.packages);
-
-    const userExists = await prisma.user.findUnique({
-      where: { email: meta.email },
-    });
-    if (userExists) return;
-
-    const paymentReferenceId = session.payment_intent || session.id;
-
-    await prisma.$transaction(async (tx) => {
-      const user = await tx.user.create({
-        data: {
-          name: meta.name,
-          email: meta.email,
-          passwordHash: meta.passwordHash,
-          role: 'VENDOR',
-          status: 'ACTIVE',
-          isActive: true,
-          emailVerified: true,
-        },
-      });
-
-      const vendorProfile = await tx.vendorProfile.create({
-        data: {
-          userId: user.id,
-          businessName: meta.businessName,
-          location: meta.location,
-          experienceYears: meta.experienceYears,
-          speciality: meta.speciality,
-          aboutMe: meta.aboutMe,
-          categoryId: meta.categoryId,
-          phone: meta.phone,
-          stripeCustomerId: session.customer,
-          highlightedServices,
-          cityId: meta.cityId,
-          stateId: meta.stateId,
-          portfolioImages: {
-            create: imageUrls.map((url, index) => ({
-              mediaUrl: url,
-              sortOrder: index,
-            })),
-          },
-          packages: {
-            create: packages.map((pkg) => ({
-              packageName: pkg.packageName,
-              price: pkg.price,
-              badge: pkg.badge || null,
-              features: pkg.features || [],
-            })),
-          },
-        },
-      });
-
-      const subscription = await tx.vendorSubscription.create({
-        data: {
-          vendorId: vendorProfile.id,
-          planId: meta.packageId,
-          status: 'ACTIVE',
-          stripeSubscriptionId: session.subscription,
-          startsAt,
-          endsAt,
-        },
-      });
-
-      await tx.vendorProfile.update({
-        where: { id: vendorProfile.id },
-        data: { currentSubscriptionId: subscription.id },
-      });
-
-      await tx.payment.create({
-        data: {
-          vendorId: vendorProfile.id,
-          subscriptionId: subscription.id,
-          amount: (session.amount_total || 0) / 100,
-          status: 'SUCCESS',
-          stripeIntentId: paymentReferenceId,
-          purchaseDate: new Date(),
-        },
-      });
-    });
-  }
-
   async createSubscriptionUpdateSession({
     profileData,
     amount,
@@ -203,7 +34,7 @@ class PaymentService {
       line_items: [
         {
           price_data: {
-            currency: 'usd',
+            currency: 'eur',
             product_data: {
               name: `Subscribe to ${subscriptionPlan.name}`,
               description: `Plan access valid for ${daysToAdd} days`,
@@ -339,6 +170,211 @@ class PaymentService {
     console.log(
       `[Webhook] Successfully activated subscription ${meta.subscriptionTierId} for surgeon ${meta.surgeonProfileId}`,
     );
+  }
+
+  async handleSubscriptionRenewal(invoice) {
+    const stripeSubscriptionId = invoice.subscription;
+    if (!stripeSubscriptionId) {
+      console.warn('[Webhook] Renewal event received without subscription id');
+      return;
+    }
+
+    const gatewayTxnId = invoice.payment_intent || invoice.id;
+
+    if (gatewayTxnId) {
+      const existingPayment = await prisma.payment.findUnique({
+        where: { gatewayTxnId },
+      });
+
+      if (existingPayment) {
+        console.log(
+          `[Webhook] Renewal transaction ${gatewayTxnId} already processed. Skipping duplicate event.`,
+        );
+        return;
+      }
+    }
+
+    const subscription = await prisma.subscription.findFirst({
+      where: { stripeSubscriptionId },
+      select: {
+        id: true,
+        surgeonProfileId: true,
+        endDate: true,
+      },
+    });
+
+    if (!subscription) {
+      console.warn(
+        `[Webhook] No subscription found for Stripe subscription ${stripeSubscriptionId}`,
+      );
+      return;
+    }
+
+    const renewedStartDate = invoice.lines?.data?.[0]?.period?.start
+      ? new Date(invoice.lines.data[0].period.start * 1000)
+      : new Date();
+    const renewedEndDate = invoice.lines?.data?.[0]?.period?.end
+      ? new Date(invoice.lines.data[0].period.end * 1000)
+      : (() => {
+          const fallback = new Date(subscription.endDate || new Date());
+          fallback.setDate(fallback.getDate() + 30);
+          return fallback;
+        })();
+
+    await prisma.$transaction(async (tx) => {
+      await tx.subscription.update({
+        where: { id: subscription.id },
+        data: {
+          status: 'ACTIVE',
+          autoRenew: true,
+          startDate: renewedStartDate,
+          endDate: renewedEndDate,
+        },
+      });
+
+      await tx.surgeonProfile.update({
+        where: { id: subscription.surgeonProfileId },
+        data: {
+          currentSubscriptionId: subscription.id,
+          paymentStatus: 'ACTIVE',
+        },
+      });
+
+      await tx.payment.create({
+        data: {
+          subscriptionId: subscription.id,
+          amount: Number(invoice.amount_paid || invoice.amount_due || 0) / 100,
+          currency: (invoice.currency || 'USD').toUpperCase(),
+          status: 'SUCCESS',
+          method: 'STRIPE',
+          gatewayTxnId,
+          metadata: {
+            stripeCustomerId: invoice.customer,
+            stripeSubscriptionId,
+            invoiceId: invoice.id,
+          },
+        },
+      });
+    });
+  }
+
+  async handleSubscriptionUpdate(subscriptionPayload) {
+    const stripeSubscriptionId = subscriptionPayload.id;
+    if (!stripeSubscriptionId) {
+      console.warn('[Webhook] Update event received without subscription id');
+      return;
+    }
+
+    const subscription = await prisma.subscription.findFirst({
+      where: { stripeSubscriptionId },
+      select: {
+        id: true,
+        surgeonProfileId: true,
+      },
+    });
+
+    if (!subscription) {
+      console.warn(
+        `[Webhook] No subscription found for Stripe subscription update ${stripeSubscriptionId}`,
+      );
+      return;
+    }
+
+    const stripeStatus = (subscriptionPayload.status || '').toLowerCase();
+    const isCancelled =
+      stripeStatus === 'canceled' || stripeStatus === 'incomplete_expired';
+    const isActive = stripeStatus === 'active' || stripeStatus === 'trialing';
+
+    const mappedSubscriptionStatus = isCancelled
+      ? 'CANCELLED'
+      : isActive
+        ? 'ACTIVE'
+        : 'EXPIRED';
+    const mappedPaymentStatus = isCancelled
+      ? 'EXPIRED'
+      : isActive
+        ? 'ACTIVE'
+        : 'UNPAID';
+
+    const updateData = {
+      status: mappedSubscriptionStatus,
+      autoRenew: !subscriptionPayload.cancel_at_period_end,
+    };
+
+    if (subscriptionPayload.current_period_start) {
+      updateData.startDate = new Date(
+        subscriptionPayload.current_period_start * 1000,
+      );
+    }
+
+    if (subscriptionPayload.current_period_end) {
+      updateData.endDate = new Date(
+        subscriptionPayload.current_period_end * 1000,
+      );
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.subscription.update({
+        where: { id: subscription.id },
+        data: updateData,
+      });
+
+      await tx.surgeonProfile.update({
+        where: { id: subscription.surgeonProfileId },
+        data: {
+          currentSubscriptionId: isCancelled ? null : subscription.id,
+          paymentStatus: mappedPaymentStatus,
+        },
+      });
+    });
+  }
+
+  async handleSubscriptionCancellation(subscriptionPayload) {
+    const stripeSubscriptionId = subscriptionPayload.id;
+    if (!stripeSubscriptionId) {
+      console.warn(
+        '[Webhook] Cancellation event received without subscription id',
+      );
+      return;
+    }
+
+    const subscription = await prisma.subscription.findFirst({
+      where: { stripeSubscriptionId },
+      select: {
+        id: true,
+        surgeonProfileId: true,
+      },
+    });
+
+    if (!subscription) {
+      console.warn(
+        `[Webhook] No subscription found for cancelled Stripe subscription ${stripeSubscriptionId}`,
+      );
+      return;
+    }
+
+    const cancelledAt = subscriptionPayload.canceled_at
+      ? new Date(subscriptionPayload.canceled_at * 1000)
+      : new Date();
+
+    await prisma.$transaction(async (tx) => {
+      await tx.subscription.update({
+        where: { id: subscription.id },
+        data: {
+          status: 'CANCELLED',
+          autoRenew: false,
+          endDate: cancelledAt,
+        },
+      });
+
+      await tx.surgeonProfile.update({
+        where: { id: subscription.surgeonProfileId },
+        data: {
+          currentSubscriptionId: null,
+          paymentStatus: 'EXPIRED',
+        },
+      });
+    });
   }
 }
 
