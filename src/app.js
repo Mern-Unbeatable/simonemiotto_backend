@@ -11,6 +11,8 @@ const morgan = require('morgan');
 const cors = require('cors');
 const path = require('path');
 const paymentRoutes = require('./modules/payment/payment.route');
+require('./modules/email/email.services');
+require('./utils/mailchimp');
 
 const { errorHandler, notFound } = require('./middlewares/errorHandler');
 const { responseFormatter } = require('./middlewares/responseFormatter');

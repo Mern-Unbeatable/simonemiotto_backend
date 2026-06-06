@@ -2,6 +2,7 @@ const { prisma } = require('../../config/database');
 const { AppError } = require('../../middlewares/errorHandler');
 const bcrypt = require('bcryptjs');
 const { generateTokenPair } = require('../../utils/jwt');
+const emailEmitter = require('../../utils/eventEmitter');
 
 class surgeonProfileService {
   createSlug(value) {
@@ -130,6 +131,12 @@ class surgeonProfileService {
         accessToken: tokens.accessToken,
         refreshToken: tokens.refreshToken,
       };
+    });
+
+    emailEmitter.emit('user-registered', {
+      id: result.user.id,
+      name: result.user.name,
+      email: result.user.email,
     });
 
     return result;

@@ -16,7 +16,7 @@ class EmailService {
   async sendMail(to, subject, text, html) {
     try {
       const mailOptions = {
-        from: `"PNW Team" <mdrakibulhasan12346@gmail.com>`,
+        from: `"TrustSurgery" <mdrakibulhasan12346@gmail.com>`,
         to,
         subject,
         text,

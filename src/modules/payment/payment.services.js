@@ -1,5 +1,6 @@
 const Stripe = require('stripe');
 const { prisma } = require('../../config/database');
+const emailEmitter = require('../../utils/eventEmitter');
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 class PaymentService {
@@ -220,6 +221,7 @@ class PaymentService {
         isPlanUpdate: 'true',
         surgeonProfileId: profileData.id,
         subscriptionTierId: subscriptionPlan.id,
+        subscriptionPlanName: subscriptionPlan.name,
         promoCodeId: promoCodeId || '',
         durationDays: String(daysToAdd),
         totalAmount: String(amount),
@@ -319,6 +321,19 @@ class PaymentService {
           },
         },
       });
+    });
+
+    emailEmitter.emit('subscription-confirmed', {
+      userData: {
+        name: session.customer_details?.name || 'Valued Customer',
+        email: session.customer_details?.email || '',
+      },
+      subscriptionDetails: {
+        planName: `Subscription Plan : ${meta.subscriptionPlanName || 'N/A'}`,
+        invoiceId: session.invoice || 'N/A',
+        amount: (session.amount_total || 0) / 100,
+        renewalDate: endDate.toDateString(),
+      },
     });
 
     console.log(
