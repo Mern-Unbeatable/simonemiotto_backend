@@ -13,6 +13,7 @@ const subscriptionPlanRoutes = require('../modules/subscriptionPlan/subscription
 const surgeonProfileRoutes = require('../modules/surgeonProfile/surgeonProfile.route');
 const promoRoutes = require('../modules/promo/promo.route');
 const applySubscriptionRoutes = require('../modules/applySubscription/applySubscription.route');
+const dashboardRoutes = require('../modules/dashboard/dashboard.route');
 
 const apiDocsHandler = require('../modules/docs/apiDocsHandler');
 
@@ -45,4 +46,5 @@ router.use('/subscription-plans', subscriptionPlanRoutes);
 router.use('/surgeon-profiles', surgeonProfileRoutes);
 router.use('/promo-code', promoRoutes);
 router.use('/subscription', applySubscriptionRoutes);
+router.use('/dashboard', dashboardRoutes);
 module.exports = router;
