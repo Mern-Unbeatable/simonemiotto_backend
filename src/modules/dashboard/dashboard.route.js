@@ -33,4 +33,11 @@ router.get(
   controller.getCombinedDashboardData,
 );
 
+router.get(
+  '/report-chart',
+  authenticate,
+  authorize(['ADMIN']),
+  controller.getDemographicAnalytics,
+);
+
 module.exports = router;

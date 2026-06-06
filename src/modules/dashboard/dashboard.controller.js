@@ -33,6 +33,15 @@ class DashboardController {
     const result = await this.service.getCombinedDashboardData();
     res.sendSuccess(result, 'Dashboard chart get successfully');
   });
+
+  getDemographicAnalytics = asyncHandler(async (req, res) => {
+    const { startDate, endDate } = req.query;
+    const result = await this.service.getDemographicAnalytics(
+      startDate,
+      endDate,
+    );
+    res.sendSuccess(result, 'Demographic analytics retrieved successfully');
+  });
 }
 
 module.exports = DashboardController;

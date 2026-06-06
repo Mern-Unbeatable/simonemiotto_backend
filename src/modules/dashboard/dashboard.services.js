@@ -191,7 +191,7 @@ class DashboardService {
             include: {
               tier: true,
               surgeonProfile: {
-                select: { name: true }, 
+                select: { name: true },
               },
             },
           },
@@ -258,6 +258,82 @@ class DashboardService {
       revenueGrowth,
       revenueByPlan,
       recentPayments,
+    };
+  }
+
+  async getDemographicAnalytics(startDateParam, endDateParam) {
+    const dateFilter = {};
+    if (startDateParam) dateFilter.gte = new Date(startDateParam);
+    if (endDateParam)
+      dateFilter.lte = new Date(`${endDateParam}T23:59:59.999Z`);
+
+    const whereClause = {};
+    if (startDateParam || endDateParam) {
+      whereClause.createdAt = dateFilter;
+    }
+    const [surgeons, specializationGroups] = await Promise.all([
+      prisma.surgeonProfile.findMany({
+        where: whereClause,
+        select: {
+          city: {
+            select: { name: true },
+          },
+        },
+      }),
+
+      prisma.surgeonProfile.groupBy({
+        by: ['specialization'],
+        where: whereClause,
+        _count: {
+          id: true,
+        },
+      }),
+    ]);
+
+    const cityMap = {};
+    surgeons.forEach((surgeon) => {
+      const cityName = surgeon.city?.name || 'Unknown';
+      cityMap[cityName] = (cityMap[cityName] || 0) + 1;
+    });
+
+    const surgeonsByCity = Object.keys(cityMap)
+      .map((city) => ({
+        city,
+        count: cityMap[city],
+      }))
+      .sort((a, b) => b.count - a.count);
+
+    const totalSurgeonsCount = specializationGroups.reduce(
+      (sum, item) => sum + item._count.id,
+      0,
+    );
+
+    const surgeonsBySpecialization = specializationGroups
+      .map((item) => {
+        const count = item._count.id;
+        const percentage =
+          totalSurgeonsCount > 0
+            ? parseFloat(((count / totalSurgeonsCount) * 100).toFixed(2))
+            : 0;
+        return {
+          specialization: item.specialization,
+          count,
+          percentage,
+        };
+      })
+      .sort((a, b) => b.count - a.count);
+
+    const topSpecializations = surgeonsBySpecialization
+      .slice(0, 5)
+      .map((item) => ({
+        specialization: item.specialization,
+        count: item.count,
+      }));
+
+    return {
+      surgeonsByCity,
+      surgeonsBySpecialization,
+      topSpecializations,
     };
   }
 }
