@@ -1,5 +1,8 @@
 const { prisma } = require('../../config/database');
 const { AppError } = require('../../middlewares/errorHandler');
+const EmailService = require('../../utils/email');
+
+const emailServices = new EmailService();
 
 class PromoCodeService {
   generateRandomCouponCode(baseName) {
@@ -102,6 +105,22 @@ class PromoCodeService {
     }
 
     return promo;
+  }
+
+  async sendEmailForPromoCode(data) {
+    const { email, subject, message } = data;
+    console.log(
+      `Simulating email send to ${email} with subject "${subject}" and message: ${message}`,
+    );
+
+    emailServices.sendMail(
+      email,
+      subject,
+      message,
+      // `<p>${message}</p><p>Use promo code: <strong>${subject}</strong> to avail the offer!</p>`,
+    );
+
+    return { success: true, message: 'Email sent successfully (simulated).' };
   }
 }
 

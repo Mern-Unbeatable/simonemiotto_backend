@@ -19,6 +19,7 @@ const { responseFormatter } = require('./middlewares/responseFormatter');
 
 // Routes
 const routes = require('./routes');
+const initSubscriptionCron = require('./utils/cronJobs');
 const app = express();
 const API_PREFIX = '/api/v1';
 
@@ -142,6 +143,8 @@ app.get('/', (req, res) => {
 });
 
 // API routes
+
+initSubscriptionCron();
 
 app.use(API_PREFIX, routes);
 

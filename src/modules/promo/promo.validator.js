@@ -31,4 +31,19 @@ const useForValidation = Joi.object({
   subscriptionTierId: Joi.string().trim().allow(null, '').required(),
 });
 
-module.exports = { createPromoCodeSchema, useForValidation };
+const sendEmailSchema = Joi.object({
+  email: Joi.string().email().required().messages({
+    'string.email': 'Please provide a valid email address.',
+    'any.required': 'Email is a required field.',
+  }),
+  subject: Joi.string().trim().required().messages({
+    'string.empty': 'Email subject cannot be empty.',
+    'any.required': 'Email subject is a required field.',
+  }),
+  message: Joi.string().trim().required().messages({
+    'string.empty': 'Email message cannot be empty.',
+    'any.required': 'Email message is a required field.',
+  }),
+});
+
+module.exports = { createPromoCodeSchema, useForValidation, sendEmailSchema };

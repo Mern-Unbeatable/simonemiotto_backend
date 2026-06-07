@@ -148,11 +148,11 @@ class surgeonProfileService {
       sortOrder,
       search,
       limit,
-      paymentStatus,
       clinic,
       specialization,
       city,
       status = 'APPROVED',
+      paymentStatus = 'ACTIVE',
     } = filterDTO;
 
     const offset = filterDTO.getOffset();
@@ -225,9 +225,10 @@ class surgeonProfileService {
         },
         orderBy: [
           {
-            currentSubscriptionId: {
-              sort: 'desc',
-              nulls: 'last',
+            currentSubscription: {
+              tier: {
+                price: 'desc',
+              },
             },
           },
           {
@@ -274,6 +275,59 @@ class surgeonProfileService {
         hasPreviousPage: filterDTO.page > 1,
       },
     };
+  }
+
+  async searchSurgeonsByName(searchString, limit = 10) {
+    const queryLimit = parseInt(limit, 10) || 10;
+    const buildWhereClause = {};
+
+    if (searchString && searchString.trim() !== '') {
+      const cleanSearch = searchString.trim();
+      buildWhereClause.name = {
+        contains: cleanSearch,
+        mode: 'insensitive',
+      };
+    }
+
+    buildWhereClause.status = 'APPROVED';
+    buildWhereClause.paymentStatus = 'ACTIVE';
+
+    const result = await prisma.surgeonProfile.findMany({
+      where: buildWhereClause,
+      take: queryLimit,
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        specialization: true,
+        currentSubscription: {
+          select: {
+            tier: {
+              select: {
+                name: true,
+                price: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: [
+        {
+          currentSubscription: {
+            tier: {
+              price: 'desc',
+            },
+          },
+        },
+      ],
+    });
+
+    return result.map((profile) => ({
+      id: profile.id,
+      name: profile.name,
+      slug: profile.slug,
+      specialization: profile.specialization,
+    }));
   }
 
   async getSurgeonProfilesAdmin(filterDTO) {
@@ -562,11 +616,27 @@ class surgeonProfileService {
   }
 
   async updateVendorStatus(id, data) {
-    await this.getProfileById(id);
-    return prisma.surgeonProfile.update({
+    const profile = await this.getProfileById(id);
+    const result = prisma.surgeonProfile.update({
       where: { id },
       data: { status: data.status, paymentStatus: data.paymentStatus },
     });
+
+    const userData = {
+      id: profile.userId,
+      name: profile.name,
+      email: profile.user?.email || null,
+    };
+
+    const statusUpdateDetails = {
+      status: data.status,
+      reason: data.rejectionReason || null,
+    };
+    emailEmitter.emit('surgeon-status-changed', {
+      userData,
+      statusUpdateDetails,
+    });
+    return result;
   }
 
   async deleteVendorProfile(id) {

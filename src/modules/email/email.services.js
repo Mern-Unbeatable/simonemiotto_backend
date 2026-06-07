@@ -148,3 +148,110 @@ emailEmitter.on('subscription-confirmed', async (data) => {
 
   await emailService.sendMail(userData.email, subject, text, html);
 });
+
+emailEmitter.on('surgeon-status-changed', async (data) => {
+  const { userData, statusUpdateDetails } = data;
+  const { status, reason } = statusUpdateDetails;
+
+  let subject = '';
+  let statusText = '';
+  let statusColor = '';
+  let dynamicContentHtml = '';
+  let dynamicContentText = '';
+  if (status === 'APPROVED') {
+    subject = 'Your Professional Profile Has Been Approved! 🎉 | TrustSurgery';
+    statusText = 'Approved';
+    statusColor = '#00A86B';
+
+    dynamicContentText = `Congratulations! Your professional surgeon profile has been reviewed and approved by our administration team. You can now log in to your dashboard to set up your availability, view patient analytics, and access premium subscription tiers.`;
+
+    dynamicContentHtml = `
+      <p>We are pleased to inform you that your professional profile has been thoroughly reviewed and 
+      <strong style="color: ${statusColor};">APPROVED</strong> by our administration team.</p>
+      <p>Your practice listing is now live, and you can instantly utilize the platform capabilities to capture patient bookings and coordinate surgical pipelines.</p>
+    `;
+  } else if (status === 'REJECTED') {
+    subject = 'Update Regarding Your Verification Status | TrustSurgery';
+    statusText = 'Rejected / Action Required';
+    statusColor = '#D9534F';
+
+    const rejectionReason =
+      reason || 'Provided documentation was unclear or incomplete.';
+
+    dynamicContentText = `Thank you for your interest in TrustSurgery. After reviewing your profile details, our administration team was unable to approve your application at this time.\n\nReason for Rejection: ${rejectionReason}\n\nPlease log in to your account, update the necessary credentials or documents, and resubmit for verification.`;
+
+    dynamicContentHtml = `
+      <p>Thank you for your application to TrustSurgery. After evaluating your profile submission, our verification team was unable to approve your account at this time.</p>
+      <div style="background-color: #FFF5F5; border-left: 4px solid ${statusColor}; padding: 15px; margin: 20px 0; border-radius: 4px;">
+        <strong style="color: ${statusColor}; display: block; margin-bottom: 5px;">Reason for Rejection:</strong>
+        <p style="margin: 0; color: #333333; font-style: italic;">"${rejectionReason}"</p>
+      </div>
+      <p>Don't worry, you can easily re-submit! Please log back into your profile portal, correct the requested details or re-upload clear copies of your verification documents, and click resubmit.</p>
+    `;
+  } else {
+    return;
+  }
+
+  const text = `Hi ${userData.name},\n\nStatus Update: ${statusText}\n\n${dynamicContentText}\n\nAccess Dashboard: https://trustsurgery.com/dashboard\n\nBest regards,\nThe TrustSurgery Team`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Account Status Update</title>
+      <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 0; color: #333333; }
+        .email-container { max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .header { background-color: #005A9C; padding: 30px 20px; text-align: center; }
+        .header h1 { color: #ffffff; margin: 0; font-size: 26px; font-weight: 600; }
+        .content { padding: 40px 30px; line-height: 1.6; }
+        .content h2 { color: #005A9C; margin-top: 0; font-size: 22px; }
+        .content p { font-size: 16px; color: #555555; }
+        
+        .status-badge { display: inline-block; padding: 6px 16px; font-weight: bold; border-radius: 20px; color: #ffffff; margin-bottom: 15px; text-transform: uppercase; font-size: 14px; letter-spacing: 0.5px; }
+        
+        .btn-container { text-align: center; margin: 30px 0; }
+        .btn { background-color: #005A9C; color: #ffffff !important; padding: 14px 30px; text-decoration: none; font-size: 16px; font-weight: bold; border-radius: 5px; display: inline-block; }
+        .footer { background-color: #f4f7f6; padding: 20px; text-align: center; font-size: 13px; color: #777777; border-top: 1px solid #ebeeec; }
+        .footer a { color: #005A9C; text-decoration: none; }
+      </style>
+    </head>
+    <body>
+      <div class="email-container">
+        <div class="header">
+          <h1>TrustSurgery</h1>
+        </div>
+
+        <div class="content">
+          <h2>Profile Review Status Update</h2>
+          <p>Dear ${userData.name},</p>
+          
+          <div class="status-badge" style="background-color: ${statusColor};">
+            ${statusText}
+          </div>
+
+          ${dynamicContentHtml}
+          
+          <div class="btn-container">
+            <a href="https://trustsurgery.com/dashboard" class="btn" target="_blank">Go to Profile Dashboard</a>
+          </div>
+
+          <p>If you have any questions regarding this assessment, feel free to contact our support desk.</p>
+          <p>Best regards,<br><strong>The TrustSurgery Team</strong></p>
+        </div>
+
+        <div class="footer">
+          <p>© 2026 TrustSurgery. All rights reserved.</p>
+          <p>This is an automated system notification regarding your registration application account status.<br>
+          <a href="https://trustsurgery.com/support">Contact Support</a> | <a href="https://trustsurgery.com/privacy">Privacy Policy</a></p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  // 5. Trigger the transmission lifecycle pipeline execution
+  await emailService.sendMail(userData.email, subject, text, html);
+});

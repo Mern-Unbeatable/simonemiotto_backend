@@ -35,6 +35,7 @@ router.post(
 );
 
 router.get('/website', controller.getProfilesWebsite);
+router.get('/search', controller.getProfilesBySearch);
 router.get('/admin', controller.getProfileAdmin);
 
 router.get('/:id', validateParams(IdParamSchema), controller.getProfileById);

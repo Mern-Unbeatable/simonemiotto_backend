@@ -23,6 +23,11 @@ class PromoCodeController {
     );
     res.sendCreated(verifiedPromo, 'Promo code validated successfully.');
   });
+
+  sendEmailForPromoCode = asyncHandler(async (req, res) => {
+    const result = await this.promoCodeService.sendEmailForPromoCode(req.body);
+    res.sendCreated(result, 'Email sent successfully (simulated).');
+  });
 }
 
 module.exports = PromoCodeController;

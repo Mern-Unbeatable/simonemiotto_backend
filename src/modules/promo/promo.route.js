@@ -9,6 +9,7 @@ const {
 const {
   createPromoCodeSchema,
   useForValidation,
+  sendEmailSchema,
 } = require('./promo.validator');
 const PromoCodeController = require('./promo.controller');
 
@@ -21,6 +22,14 @@ router.post(
   authorize(['ADMIN']),
   validate(createPromoCodeSchema),
   controller.createCode,
+);
+
+router.post(
+  '/send-email',
+  authenticate,
+  authorize(['ADMIN']),
+  validate(sendEmailSchema),
+  controller.sendEmailForPromoCode,
 );
 
 router.post('/verify', validate(useForValidation), controller.validateCode);
