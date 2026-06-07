@@ -57,7 +57,6 @@ class PaymentController {
         }
         break;
       }
-
       case 'customer.subscription.updated': {
         const subscription = event.data.object;
         try {
