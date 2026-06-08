@@ -193,35 +193,10 @@ class AuthService {
         throw new AppError('Invalid email or password', 401);
       }
 
-      // if (!user.emailVerified || user.status !== 'ACTIVE') {
-      //   const otp = await this.sendRegistrationOtp(user);
-
-      //   console.log(
-      //     `User ${user.email} attempted to login without verified email. OTP resent: ${otp}`,
-      //   );
-
-      //   throw new AppError(
-      //     'Email not verified, send otp in your email and verify it',
-      //     403,
-      //   );
-      // }
-
       delete user.passwordHash;
 
       const tokens = generateTokenPair(user);
-
-      // Persist session and update lastLoginAt in parallel
-      // await Promise.all([
-      //   this.authRepository.createSession({
-      //     userId: user.id,
-      //     refreshToken: tokens.refreshToken,
-      //     expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      //   }),
-      //   this.authRepository.updateLastLogin(user.id),
-      // ]);
-
-      logger.info(`User logged in successfully: ${user.email} (${user.role})`);
-      return new AuthResponseDTO(user, tokens);
+      return { user, tokens };
     } catch (error) {
       logger.error('Login failed:', error);
       throw error;

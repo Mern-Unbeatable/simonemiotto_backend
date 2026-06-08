@@ -430,8 +430,8 @@ class surgeonProfileService {
         status: profile.status,
         joinedAt: profile.createdAt,
         subscriptionPlan: profile.currentSubscription?.tier.name || null,
-        subscriptionDate: profile.currentSubscription?.startsAt || null,
-        subscriptionEndDate: profile.currentSubscription?.endsAt || null,
+        subscriptionDate: profile.currentSubscription?.startDate || null,
+        subscriptionEndDate: profile.currentSubscription?.endDate || null,
         paymentStatus: profile.paymentStatus,
         thumbnailImage: profile.user.avatarUrl
           ? profile.user.avatarUrl

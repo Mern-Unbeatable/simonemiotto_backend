@@ -61,22 +61,15 @@ class LoginDTO {
 class UserResponseDTO {
   constructor(user) {
     this.id = user.id;
-    this.firstName = user.firstName;
-    this.lastName = user.lastName;
+    this.name = user.name;
     this.email = user.email;
     this.phone = user.phone || null;
     this.avatarUrl = user.avatarUrl || null;
     this.role = user.role;
     this.status = user.status;
     this.emailVerified = user.emailVerified;
-    this.gender = user.gender || null;
-    this.dateOfBirth = user.dateOfBirth || null;
     this.location = user.location || null;
-    this.teamClub = user.teamClub || null;
-    this.headcount = user.headcount || null;
-    this.companyLocation = user.companyLocation || null;
     this.joinedAt = user.joinedAt;
-    this.lastLoginAt = user.lastLoginAt || null;
     this.createdAt = user.createdAt;
     this.updatedAt = user.updatedAt;
   }

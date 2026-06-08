@@ -49,13 +49,6 @@ class AuthController {
   login = asyncHandler(async (req, res) => {
     const loginDTO = new LoginDTO(req.body);
     const result = await this.authService.login(loginDTO);
-
-    // logger.audit(result.user.id, 'User Login', `User: ${result.user.email}`, {
-    //   role: result.user.role,
-    //   ip: req.ip,
-    //   userAgent: req.get('User-Agent'),
-    // });
-
     res.sendSuccess(result, 'Login successful');
   });
 
