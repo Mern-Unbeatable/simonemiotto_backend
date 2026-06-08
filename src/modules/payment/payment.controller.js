@@ -87,6 +87,17 @@ class PaymentController {
         break;
       }
 
+      case 'invoice.upcoming': {
+        const subscription = event.data.object;
+        try {
+          await this.paymentService.handleUpcomingInvoice(subscription);
+        } catch (error) {
+          console.error(`DB Error during subscription deletion:`, error);
+          return res.status(500).send('Internal Server Error');
+        }
+        break;
+      }
+
       default:
         console.log(`Unhandled event type ${event.type}`);
     }

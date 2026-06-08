@@ -376,6 +376,79 @@ class PaymentService {
       });
     });
   }
+
+  async handleUpcomingInvoice(invoicePayload) {
+    const stripeSubscriptionId = invoicePayload.subscription;
+
+    if (!stripeSubscriptionId) {
+      console.warn(
+        '[Webhook] Upcoming invoice event received without subscription id',
+      );
+      return;
+    }
+
+    const userSubscription = await prisma.subscription.findFirst({
+      where: { stripeSubscriptionId: stripeSubscriptionId },
+      include: { tier: true },
+    });
+
+    if (!userSubscription) {
+      console.warn(
+        `[Webhook] No subscription found in DB for upcoming invoice of sub: ${stripeSubscriptionId}`,
+      );
+      return;
+    }
+
+    const currentDbPriceInCents = Math.round(
+      Number(userSubscription.tier.price) * 100,
+    );
+
+    if (invoicePayload.amount_due !== currentDbPriceInCents) {
+      try {
+        const stripeSub =
+          await stripe.subscriptions.retrieve(stripeSubscriptionId);
+        const subscriptionItemId = stripeSub.items.data[0].id;
+        await prisma.$transaction(async (tx) => {
+          await stripe.subscriptions.update(stripeSubscriptionId, {
+            items: [
+              {
+                id: subscriptionItemId,
+                price_data: {
+                  currency: 'eur',
+                  product: stripeSub.plan.product,
+                  unit_amount: currentDbPriceInCents,
+                  recurring: {
+                    interval: 'day',
+                    interval_count: Number(userSubscription.tier.durationDays),
+                  },
+                },
+              },
+            ],
+            proration_behavior: 'none',
+          });
+          await tx.subscription.update({
+            where: { id: userSubscription.id },
+            data: {
+              updatedAt: new Date(),
+            },
+          });
+        });
+
+        console.log(
+          `[Webhook] Successfully updated upcoming price to €${userSubscription.tier.price} for sub: ${stripeSubscriptionId}`,
+        );
+      } catch (error) {
+        console.error(
+          `[Webhook] Failed to update upcoming invoice for sub ${stripeSubscriptionId}:`,
+          error.message,
+        );
+      }
+    } else {
+      console.log(
+        `[Webhook] Price is already up-to-date (€${userSubscription.tier.price}) for sub: ${stripeSubscriptionId}`,
+      );
+    }
+  }
 }
 
 module.exports = PaymentService;
