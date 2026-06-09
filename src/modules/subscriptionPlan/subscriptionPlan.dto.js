@@ -6,6 +6,7 @@ class CreateSubscriptionPlanDTO {
     this.portfolioLimit = data.portfolioLimit;
     this.featuresAllowed = data.featuresAllowed;
     this.validFor = data.validFor;
+    this.autoRenewal = data.autoRenewal || false;
   }
 
   toDatabase() {
@@ -16,6 +17,7 @@ class CreateSubscriptionPlanDTO {
       portfolioLimit: this.portfolioLimit,
       featuresAllowed: this.featuresAllowed,
       validFor: this.validFor,
+      autoRenewal: this.autoRenewal,
     };
   }
 }
@@ -28,6 +30,7 @@ class UpdateSubscriptionPlanDTO {
     this.portfolioLimit = data.portfolioLimit;
     this.featuresAllowed = data.featuresAllowed;
     this.validFor = data.validFor;
+    this.autoRenewal = data.autoRenewal || false;
   }
 
   toDatabase() {
@@ -43,6 +46,8 @@ class UpdateSubscriptionPlanDTO {
     if (this.featuresAllowed !== undefined)
       updateData.featuresAllowed = this.featuresAllowed;
     if (this.validFor !== undefined) updateData.validFor = this.validFor;
+    if (this.autoRenewal !== undefined)
+      updateData.autoRenewal = this.autoRenewal;
 
     return updateData;
   }
