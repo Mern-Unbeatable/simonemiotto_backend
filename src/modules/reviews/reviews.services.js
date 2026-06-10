@@ -17,6 +17,52 @@ class ReviewDAO {
     });
   }
 
+  async createReview(reviewData, patientId) {
+    const { rating, comment, surgeonProfileId } = reviewData;
+
+    return await prisma.$transaction(async (tx) => {
+      const review = await tx.review.create({
+        data: {
+          rating: parseInt(rating, 10),
+          comment: comment || null,
+          patientId,
+          surgeonProfileId,
+        },
+        include: {
+          patient: {
+            select: {
+              name: true,
+            },
+          },
+        },
+      });
+
+      const stats = await tx.review.aggregate({
+        where: {
+          surgeonProfileId,
+        },
+        _avg: {
+          rating: true,
+        },
+        _count: {
+          rating: true,
+        },
+      });
+
+      await tx.surgeonProfile.update({
+        where: {
+          id: surgeonProfileId,
+        },
+        data: {
+          ratings: stats._avg.rating || 0,
+          totalReviews: stats._count.rating,
+        },
+      });
+
+      return review;
+    });
+  }
+
   async getReviewById(id) {
     return await prisma.review.findUnique({
       where: { id },

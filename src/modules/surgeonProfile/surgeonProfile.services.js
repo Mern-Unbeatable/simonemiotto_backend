@@ -155,6 +155,21 @@ class surgeonProfileService {
       paymentStatus = 'ACTIVE',
     } = filterDTO;
 
+    const allowedSortFields = new Set([
+      'createdAt',
+      'updatedAt',
+      'name',
+      'experienceYears',
+      'status',
+      'paymentStatus',
+    ]);
+
+    const normalizedSortBy = allowedSortFields.has(sortBy)
+      ? sortBy
+      : 'createdAt';
+    const normalizedSortOrder =
+      String(sortOrder).toLowerCase() === 'asc' ? 'asc' : 'desc';
+
     const offset = filterDTO.getOffset();
     const whereCondition = [];
 
@@ -225,14 +240,14 @@ class surgeonProfileService {
         },
         orderBy: [
           {
+            [normalizedSortBy]: normalizedSortOrder,
+          },
+          {
             currentSubscription: {
               tier: {
                 price: 'desc',
               },
             },
-          },
-          {
-            [sortBy || 'createdAt']: sortOrder || 'desc',
           },
         ],
         skip: offset,

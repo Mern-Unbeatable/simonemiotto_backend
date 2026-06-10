@@ -281,6 +281,8 @@ model SurgeonProfile {
   certifications          String[]
   procedures              Json?
   certificateUrls         String?
+  ratings                 Float           @default(0)
+  totalReviews            Int             @default(0)
   cityId                  String
   city                    City            @relation(fields: [cityId], references: [id])
   address                 String?

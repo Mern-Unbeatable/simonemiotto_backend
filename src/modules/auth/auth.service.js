@@ -314,6 +314,9 @@ class AuthService {
         ...(updateProfileDTO.isActive !== undefined
           ? { isActive: updateProfileDTO.isActive }
           : {}),
+        ...(updateProfileDTO.phone !== undefined
+          ? { phone: updateProfileDTO.phone }
+          : {}),
       };
 
       if (Object.keys(updateData).length === 0) {
