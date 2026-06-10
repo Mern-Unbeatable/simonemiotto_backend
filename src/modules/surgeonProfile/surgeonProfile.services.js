@@ -271,6 +271,8 @@ class surgeonProfileService {
         address: profile.address || null,
         bio: profile.bio || null,
         isVerified: profile.isVerified,
+        ratings: profile.ratings || 0,
+        totalReviews: profile.totalReviews || 0,
         status: profile.status,
         paymentStatus: profile.paymentStatus,
         thumbnailImage: profile.user.avatarUrl
