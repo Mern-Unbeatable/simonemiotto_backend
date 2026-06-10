@@ -299,6 +299,12 @@ class surgeonProfileService {
         id: true,
         name: true,
         slug: true,
+        city: {
+          select: { name: true, slug: true },
+        },
+        clinic: {
+          select: { name: true, slug: true },
+        },
         specialization: true,
         currentSubscription: {
           select: {
@@ -327,6 +333,9 @@ class surgeonProfileService {
       name: profile.name,
       slug: profile.slug,
       specialization: profile.specialization,
+      city: profile.city || null,
+      clinic: profile.clinic || null,
+      // subscriptionPlan: profile.currentSubscription?.tier.name || null,
     }));
   }
 
