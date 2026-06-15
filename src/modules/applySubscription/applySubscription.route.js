@@ -33,4 +33,11 @@ router.post(
   controller.toggleAutoRenew,
 );
 
+router.get(
+  '/session-details',
+  authenticate,
+  authorize(['SURGEON']),
+  controller.getSessionDetails,
+);
+
 module.exports = router;

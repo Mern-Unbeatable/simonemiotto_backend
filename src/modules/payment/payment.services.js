@@ -1,6 +1,7 @@
 const Stripe = require('stripe');
 const { prisma } = require('../../config/database');
 const emailEmitter = require('../../utils/eventEmitter');
+const { AppError } = require('../../middlewares/errorHandler');
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 class PaymentService {
@@ -57,8 +58,8 @@ class PaymentService {
         durationDays: String(daysToAdd),
         totalAmount: String(amount),
       },
-      success_url: `${process.env.FRONTEND_URL}/dashboard/billing?success=true`,
-      cancel_url: `${process.env.FRONTEND_URL}/dashboard/billing?canceled=true`,
+      success_url: `${process.env.FRONTEND_URL}/surgeon/payment-success?success=true&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.FRONTEND_URL}/surgeon/payment-failed?canceled=true`,
     });
 
     return {
@@ -448,6 +449,70 @@ class PaymentService {
         `[Webhook] Price is already up-to-date (€${userSubscription.tier.price}) for sub: ${stripeSubscriptionId}`,
       );
     }
+  }
+
+  async getSessionDetails(session_id) {
+    if (!session_id) {
+      throw new AppError('Session ID is required', 400);
+    }
+
+    try {
+      const session = await stripe.checkout.sessions.retrieve(session_id, {
+        expand: ['invoice.payment_intent', 'invoice.charge'],
+      });
+
+
+      const invoice = session.invoice;
+      const charge = invoice?.charge;
+
+
+      if (!invoice) {
+        throw new AppError(
+          'Payment details not found for this subscription session',
+          404,
+        );
+      }
+
+      let paymentMethodText = 'Card Payment';
+      if (charge && charge.payment_method_details?.card) {
+        const cardInfo = charge.payment_method_details.card;
+        const brand =
+          cardInfo.brand.charAt(0).toUpperCase() + cardInfo.brand.slice(1);
+        paymentMethodText = `${brand} ending in ${cardInfo.last4}`;
+      }
+
+      const customTransactionId = this.generateCustomId();
+
+      const planName =
+        session.metadata?.subscriptionPlanName || 'Subscription Plan';
+      const durationDays = session.metadata?.durationDays || '';
+      const surgeonProfileId = session.metadata?.surgeonProfileId || null;
+
+      return {
+        transactionId: customTransactionId,
+        amount: (session.amount_total || 0) / 100,
+        currency: (session.currency || 'EUR').toUpperCase(),
+        paymentMethod: paymentMethodText,
+        planName,
+        durationDays,
+      };
+    } catch (error) {
+      console.error(
+        `Error retrieving session details for ${session_id}:`,
+        error,
+      );
+      if (error instanceof AppError) throw error;
+      throw new AppError('Failed to retrieve session details', 500);
+    }
+  }
+
+  generateCustomId() {
+    const date = new Date();
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const randomSequence = String(Math.floor(100000 + Math.random() * 900000));
+
+    return `TRS-${year}-${month}-${randomSequence}`;
   }
 }
 
