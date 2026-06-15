@@ -265,6 +265,7 @@ class surgeonProfileService {
         specialization: profile.specialization,
         experienceYears: profile.experienceYears,
         language: profile.language,
+        
         city: profile.city?.name || null,
         clinic: profile.clinic?.name || null,
         availability: profile.availability || null,
