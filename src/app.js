@@ -47,6 +47,7 @@ app.use(
             'http://localhost:5174',
             'http://localhost:3000',
             'http://localhost:3001',
+            'https://api-simonemiotto.maktechgroup.tech',
           ],
     credentials: true,
   }),
