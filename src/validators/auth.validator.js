@@ -105,6 +105,7 @@ const updateProfileSchema = Joi.object({
   profileStep: Joi.number().integer().min(1).max(10).optional(),
   isActive: Joi.boolean().optional(),
   phone: Joi.string().optional(),
+  address: Joi.string().optional(),
 });
 
 module.exports = {

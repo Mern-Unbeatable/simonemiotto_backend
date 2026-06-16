@@ -60,6 +60,7 @@ model User {
   joinedAt      DateTime      @default(now())
   lastLoginAt   DateTime?
   avatarUrl     String?
+  address       String?
 
   // Relations
   otpTokens      OtpToken[]
@@ -110,6 +111,7 @@ model SubscriptionTier {
   stripePriceId String?
   durationDays  Int
   features      String[]
+  verifiedBadge Boolean        @default(false)
   price         Decimal        @db.Decimal(10, 2)
   isDeleted     Boolean        @default(false)
   autoRenew     Boolean        @default(false)

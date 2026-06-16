@@ -317,6 +317,12 @@ class AuthService {
         ...(updateProfileDTO.phone !== undefined
           ? { phone: updateProfileDTO.phone }
           : {}),
+        ...(updateProfileDTO.address !== undefined
+          ? { address: updateProfileDTO.address }
+          : {}),
+        ...(updateProfileDTO.avatarUrl !== undefined
+          ? { avatarUrl: updateProfileDTO.avatarUrl }
+          : {}),
       };
 
       if (Object.keys(updateData).length === 0) {

@@ -17,6 +17,8 @@ const USER_SELECT = {
   emailVerified: true,
   joinedAt: true,
   lastLoginAt: true,
+  address: true,
+  avatarUrl: true,
   createdAt: true,
   updatedAt: true,
 };

@@ -18,6 +18,7 @@ const {
   otpVerifySchema,
   resendOtpSchema,
 } = require('../../validators/auth.validator');
+const upload = require('../../middlewares/upload');
 
 const router = express.Router();
 const authController = new AuthController();
@@ -128,6 +129,7 @@ router.get('/profile', authenticate, authController.getProfile);
 router.put(
   '/profile',
   authenticate,
+  upload.single('avatar'),
   validate(updateProfileSchema),
   authController.updateProfile,
 );

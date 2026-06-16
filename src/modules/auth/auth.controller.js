@@ -113,6 +113,11 @@ class AuthController {
    * @example PUT /api/v1/auth/profile
    */
   updateProfile = asyncHandler(async (req, res) => {
+    const file = req.file;
+    if (file) {
+      req.body.avatarUrl = `/uploads/${file.filename}`;
+    }
+
     const result = await this.authService.updateProfile(req.user.id, req.body);
 
     logger.audit(req.user.id, 'Profile Update', `User: ${req.user.email}`, {
