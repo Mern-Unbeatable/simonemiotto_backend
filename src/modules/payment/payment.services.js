@@ -128,6 +128,7 @@ class PaymentService {
           endDate,
           autoRenew: true,
         },
+        select: { id: true, tier: true },
       });
 
       await tx.surgeonProfile.update({
@@ -135,6 +136,7 @@ class PaymentService {
         data: {
           currentSubscriptionId: newSubscription.id,
           paymentStatus: 'ACTIVE',
+          isVerified: newSubscription.tier.verifiedBadge,
         },
       });
 
@@ -461,10 +463,8 @@ class PaymentService {
         expand: ['invoice.payment_intent', 'invoice.charge'],
       });
 
-
       const invoice = session.invoice;
       const charge = invoice?.charge;
-
 
       if (!invoice) {
         throw new AppError(
