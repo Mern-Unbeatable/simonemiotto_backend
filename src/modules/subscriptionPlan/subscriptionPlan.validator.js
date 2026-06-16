@@ -39,6 +39,7 @@ const updateSubscriptionTierSchema = Joi.object({
   price: Joi.number().positive().precision(2).optional(),
   isDeleted: Joi.boolean().optional(),
   autoRenew: Joi.boolean().default(false).optional(),
+  verifiedBadge: Joi.boolean().optional(),
 }).min(1); // Ensures at least one field is passed when executing an update query
 
 module.exports = {

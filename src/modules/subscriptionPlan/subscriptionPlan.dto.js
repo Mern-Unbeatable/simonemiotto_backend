@@ -31,6 +31,7 @@ class UpdateSubscriptionPlanDTO {
     this.featuresAllowed = data.featuresAllowed;
     this.validFor = data.validFor;
     this.autoRenewal = data.autoRenewal || false;
+    this.verifiedBadge = data.verifiedBadge;
   }
 
   toDatabase() {
@@ -48,6 +49,8 @@ class UpdateSubscriptionPlanDTO {
     if (this.validFor !== undefined) updateData.validFor = this.validFor;
     if (this.autoRenewal !== undefined)
       updateData.autoRenewal = this.autoRenewal;
+    if (this.verifiedBadge !== undefined)
+      updateData.verifiedBadge = this.verifiedBadge;
 
     return updateData;
   }
