@@ -2,36 +2,36 @@
  * Environment-based configuration system
  * Validates required environment variables and exports configuration object
  */
-require("dotenv").config();
-const Joi = require("joi");
+require('dotenv').config();
+const Joi = require('joi');
 
 // Environment validation schema
 const envSchema = Joi.object({
   NODE_ENV: Joi.string()
-    .valid("development", "production", "test")
-    .default("development"),
+    .valid('development', 'production', 'test')
+    .default('development'),
   PORT: Joi.number().default(3000),
   DATABASE_URL: Joi.string()
     .required()
-    .description("PostgreSQL connection string"),
+    .description('PostgreSQL connection string'),
 
   // JWT Configuration
-  JWT_SECRET: Joi.string().min(32).required().description("JWT secret key"),
-  JWT_ACCESS_EXPIRE: Joi.string().default("15m"),
-  JWT_REFRESH_EXPIRE: Joi.string().default("7d"),
+  JWT_SECRET: Joi.string().min(32).required().description('JWT secret key'),
+  JWT_ACCESS_EXPIRE: Joi.string().default('15m'),
+  JWT_REFRESH_EXPIRE: Joi.string().default('7d'),
   JWT_REFRESH_SECRET: Joi.string()
     .min(32)
     .required()
-    .description("JWT refresh token secret"),
+    .description('JWT refresh token secret'),
 
   // CORS Configuration
   ALLOWED_ORIGINS: Joi.string().default(
-    "http://localhost:3000,http://localhost:3001",
+    'http://localhost:3000,http://localhost:3001',
   ),
 
   // File Upload Configuration
   MAX_FILE_SIZE: Joi.number().default(5 * 1024 * 1024), // 5MB default
-  UPLOAD_PATH: Joi.string().default("./uploads"),
+  UPLOAD_PATH: Joi.string().default('./uploads'),
 
   // Security
   BCRYPT_ROUNDS: Joi.number().default(12),
@@ -42,8 +42,8 @@ const envSchema = Joi.object({
 
   // Logging
   LOG_LEVEL: Joi.string()
-    .valid("error", "warn", "info", "debug")
-    .default("info"),
+    .valid('error', 'warn', 'info', 'debug')
+    .default('info'),
 }).unknown();
 
 // Validate environment variables
@@ -66,7 +66,7 @@ const config = {
     refreshSecret: envVars.JWT_REFRESH_SECRET,
   },
   cors: {
-    allowedOrigins: envVars.ALLOWED_ORIGINS.split(","),
+    allowedOrigins: envVars.ALLOWED_ORIGINS.split(','),
   },
   upload: {
     maxFileSize: envVars.MAX_FILE_SIZE,
@@ -81,6 +81,17 @@ const config = {
   },
   logging: {
     level: envVars.LOG_LEVEL,
+  },
+  mailchimp: {
+    apiKey: envVars.MAILCHIMP_API_KEY,
+    listId: envVars.MAILCHIMP_LIST_ID,
+    serverPrefix: envVars.SERVER_PREFIX,
+    smtp: {
+      host: envVars.MAILCHIMP_SMTP_HOST,
+      port: envVars.MAILCHIMP_SMTP_PORT,
+      user: envVars.MAILCHIMP_SMTP_USER,
+      password: envVars.MAILCHIMP_SMTP_PASSWORD,
+    },
   },
 };
 

@@ -1,14 +1,25 @@
 // services/email.service.js
 const nodemailer = require('nodemailer');
 const { AppError } = require('../middlewares/errorHandler');
+const config = require('../config');
 
 class EmailService {
   constructor() {
+    // this.transporter = nodemailer.createTransport({
+    //   service: 'gmail',
+    //   auth: {
+    //     user: 'mdrakibulhasan12346@gmail.com',
+    //     pass: 'rbyz nvgi eppd rwqm',
+    //   },
+    // });
+
     this.transporter = nodemailer.createTransport({
-      service: 'gmail',
+      host: config.mailchimp.smtp.host,
+      port: process.env.SMTP_PORT,
+      secure: false,
       auth: {
-        user: 'mdrakibulhasan12346@gmail.com',
-        pass: 'rbyz nvgi eppd rwqm',
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
       },
     });
   }

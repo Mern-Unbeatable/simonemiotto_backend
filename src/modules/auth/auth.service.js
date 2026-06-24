@@ -362,11 +362,9 @@ class AuthService {
         return { message: 'If that email exists, a reset code has been sent.' };
       }
 
-      const plainCode = crypto
-        .randomInt(0, 1000000)
-        .toString()
-        .padStart(6, '0');
-      const codeHash = await bcrypt.hash(plainCode, 10);
+      const plainCode = crypto.randomInt(100000, 1000000);
+
+      const codeHash = await bcrypt.hash(plainCode.toString(), 10);
       const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
       await this.authRepository.createOtpToken({

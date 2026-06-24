@@ -265,7 +265,7 @@ class surgeonProfileService {
         specialization: profile.specialization,
         experienceYears: profile.experienceYears,
         language: profile.language,
-        
+
         city: profile.city?.name || null,
         clinic: profile.clinic?.name || null,
         availability: profile.availability || null,
@@ -590,6 +590,10 @@ class surgeonProfileService {
       delete dtoData.email;
     }
 
+    if (fileUrls.avatarUrl !== undefined && fileUrls.avatarUrl !== null) {
+      userData.avatarUrl = fileUrls.avatarUrl;
+    }
+
     if (fileUrls.governmentIDFrontUrl)
       dtoData.governmentIDFrontUrl = fileUrls.governmentIDFrontUrl;
     if (fileUrls.governmentIDBackUrl)
@@ -677,15 +681,17 @@ class surgeonProfileService {
   }
 
   async deletePortfolioImage(imageId) {
-    const image = await prisma.surgeonProfile.findUnique({
+    const image = await prisma.surgeonPhotos.findUnique({
       where: { id: imageId },
     });
+
+    console.log('Deleting portfolio image with ID:', imageId);
 
     if (!image) {
       throw new AppError('Portfolio image not found', 404);
     }
 
-    await prisma.surgeonProfile.delete({
+    await prisma.surgeonPhotos.delete({
       where: { id: imageId },
     });
 
