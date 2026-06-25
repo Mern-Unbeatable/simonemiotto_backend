@@ -120,6 +120,7 @@ router.get('/me', authenticate, authController.getCurrentUser);
  * @access Private
  */
 router.get('/profile', authenticate, authController.getProfile);
+router.get('/all-users', authenticate, authController.getAllUsers);
 
 /**
  * @route PUT /api/v1/auth/profile

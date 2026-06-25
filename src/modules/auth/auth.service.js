@@ -33,8 +33,6 @@ class AuthService {
       </div>
       `,
     );
-
-    console.log(`OTP for ======== ${email}: ${plainCode}`);
   };
 
   async sendRegistrationOtp(user) {
@@ -435,11 +433,6 @@ class AuthService {
         throw new AppError('Invalid or expired reset token', 400);
       }
 
-      console.log(
-        `Comparing OTP =============: ${resetPasswordDTO.code}` +
-          ` with hash: ${otpToken.codeHash}`,
-      );
-
       const isCodeValid = await bcrypt.compare(
         resetPasswordDTO.code,
         otpToken.codeHash,
@@ -543,6 +536,11 @@ class AuthService {
     if (userRole === 'ADMIN') return true;
     if (userId === resourceOwnerId) return true;
     return false;
+  }
+
+  async getAllUsers(FilterUserDTO) {
+    const result = await this.authRepository.getAllUser(FilterUserDTO);
+    return result;
   }
 }
 

@@ -271,6 +271,47 @@ class AuthRepository {
       throw error;
     }
   }
+
+  async getAllUser(filterDTO) {
+    const { sortBy, sortOrder, search, limit } = filterDTO;
+
+    const offset = filterDTO.getOffset();
+    const whereCondition = [];
+
+    if (search) {
+      whereCondition.push({
+        OR: [
+          { name: { contains: search, mode: 'insensitive' } },
+          { email: { contains: search, mode: 'insensitive' } },
+          { phone: { contains: search, mode: 'insensitive' } },
+        ],
+      });
+    }
+
+    const finalWhere = whereCondition.length > 0 ? { AND: whereCondition } : {};
+
+    const [user, total] = await Promise.all([
+      prisma.user.findMany({
+        where: { ...finalWhere, role: 'USER' },
+        orderBy: { [sortBy]: sortOrder },
+        skip: offset,
+        take: limit,
+      }),
+      prisma.user.count({ where: { ...finalWhere, role: 'USER' } }),
+    ]);
+
+    return {
+      data: user,
+      pagination: {
+        currentPage: filterDTO.page,
+        itemsPerPage: filterDTO.limit,
+        totalItems: total,
+        totalPages: Math.ceil(total / filterDTO.limit),
+        hasNextPage: filterDTO.page < Math.ceil(total / filterDTO.limit),
+        hasPreviousPage: filterDTO.page > 1,
+      },
+    };
+  }
 }
 
 module.exports = AuthRepository;

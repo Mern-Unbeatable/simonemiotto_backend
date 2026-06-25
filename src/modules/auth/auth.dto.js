@@ -191,6 +191,20 @@ class UpdateProfileDTO {
   }
 }
 
+class filterUserDTO {
+  constructor(query = {}) {
+    this.page = parseInt(query.page) || 1;
+    this.limit = parseInt(query.limit) || 10;
+    this.sortBy = query.sortBy || query.sortby || 'createdAt';
+    this.sortOrder = query.sortOrder || query.sortorder || 'desc';
+    this.search = query.search;
+  }
+
+  getOffset() {
+    return (this.page - 1) * this.limit;
+  }
+}
+
 module.exports = {
   RegisterDTO,
   LoginDTO,
@@ -203,4 +217,5 @@ module.exports = {
   ForgotPasswordDTO,
   ResetPasswordDTO,
   UpdateProfileDTO,
+  filterUserDTO,
 };

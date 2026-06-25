@@ -12,6 +12,7 @@ const {
   ResetPasswordDTO,
   VerifyOtpDTO,
   ResendOtpDTO,
+  filterUserDTO,
 } = require('./auth.dto');
 const logger = require('../../utils/logger');
 
@@ -204,6 +205,16 @@ class AuthController {
     const stats = await this.authService.getUserStats();
 
     res.sendSuccess(stats, 'User statistics retrieved successfully');
+  });
+
+  getAllUsers = asyncHandler(async (req, res) => {
+    const filterDTO = new filterUserDTO(req.query);
+    const result = await this.authService.getAllUsers(filterDTO);
+    res.sendSuccess(
+      result.data,
+      'Users retrieved successfully',
+      result.pagination,
+    );
   });
 }
 
