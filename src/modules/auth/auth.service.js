@@ -93,6 +93,7 @@ class AuthService {
       const preparedUserData = {
         name: resolvedName,
         email: userData.email,
+        phone: userData.phone,
         role: userData.role || 'COUPLE',
         passwordHash: hashedPassword,
         status: 'PENDING_VERIFICATION',
