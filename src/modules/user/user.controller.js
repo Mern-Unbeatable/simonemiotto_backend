@@ -93,8 +93,6 @@ class UserController {
 
   deleteUser = asyncHandler(async (req, res) => {
     const { id } = req.params;
-
-    // Prevent self-deletion
     if (req.user.id === id) {
       return res.sendBadRequest('You cannot delete your own account');
     }

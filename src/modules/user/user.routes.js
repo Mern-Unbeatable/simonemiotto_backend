@@ -230,7 +230,6 @@ router.delete(
   '/:id',
   authenticate,
   authorize(['ADMIN']),
-  validateParams(idParamsSchema),
   userController.deleteUser,
 );
 
