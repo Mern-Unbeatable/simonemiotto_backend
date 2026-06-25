@@ -33,6 +33,7 @@ const registerSchema = Joi.object({
   firstName: Joi.string().min(1).max(150).trim(),
   lastName: Joi.string().min(1).max(150).trim(),
   email,
+  phone: Joi.string().optional(),
   password: strongPassword,
   role: Joi.string().valid('USER', 'SURGEON', 'ADMIN').default('USER'),
 }).or('name', 'firstName');
