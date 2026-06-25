@@ -27,8 +27,10 @@ class CityService {
 
   async getAll() {
     return prisma.city.findMany({
+      where: { isDeleted: false },
       include: {
         clinics: {
+          where: { isDeleted: false },
           orderBy: { createdAt: 'asc' },
         },
       },
@@ -69,8 +71,9 @@ class CityService {
   async delete(id) {
     await this.getById(id);
 
-    await prisma.city.delete({
+    await prisma.city.update({
       where: { id },
+      data: { isDeleted: true },
     });
 
     return true;
