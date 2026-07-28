@@ -1,343 +1,426 @@
 {
   "info": {
-    "_postman_id": "f3a4d319-4b64-4b4f-9f8c-2b5b1cf9f101",
-    "name": "Surgeon Platform - Regione Provincia Citta Flow",
-    "description": "Admin + Surgeon test flow for Regione > Provincia > Citta hierarchy and surgeon profile operations.",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    "name": "Surgeon Regione-Provincia-Citta API",
+    "description": "Postman collection for testing auth, admin CRUD, and public suggestion/search APIs with Regione > Provincia > Citta hierarchy.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "4f40e6d6-87f8-4f7a-9f12-c8972fd7f3c2"
   },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "1) Admin Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/login"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "const accessToken = json?.data?.tokens?.accessToken || json?.data?.accessToken;",
+                  "if (accessToken) pm.collectionVariables.set('adminToken', accessToken);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "2) Surgeon Register (multipart)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "name", "value": "Dr. Example Surgeon", "type": "text" },
+                { "key": "email", "value": "{{surgeonEmail}}", "type": "text" },
+                { "key": "password", "value": "{{surgeonPassword}}", "type": "text" },
+                { "key": "phone", "value": "+8801700000000", "type": "text" },
+                { "key": "regionId", "value": "{{regionId}}", "type": "text" },
+                { "key": "provinceId", "value": "{{provinceId}}", "type": "text" },
+                { "key": "cityId", "value": "{{cityId}}", "type": "text" },
+                { "key": "clinicId", "value": "{{clinicId}}", "type": "text" },
+                { "key": "specialization", "value": "{{specialization}}", "type": "text" },
+                { "key": "experienceYears", "value": "8", "type": "text" },
+                { "key": "address", "value": "Demo address", "type": "text" },
+                { "key": "bio", "value": "Demo profile bio", "type": "text" }
+              ]
+            },
+            "url": "{{baseUrl}}/surgeon-profiles"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "const data = json?.data || {};",
+                  "if (data?.id) pm.collectionVariables.set('profileId', data.id);",
+                  "const token = data?.tokens?.accessToken || data?.accessToken;",
+                  "if (token) pm.collectionVariables.set('surgeonToken', token);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "3) Surgeon Profile Update",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{surgeonToken}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "name", "value": "Dr. Updated Name", "type": "text" },
+                { "key": "regionId", "value": "{{regionId}}", "type": "text" },
+                { "key": "provinceId", "value": "{{provinceId}}", "type": "text" },
+                { "key": "cityId", "value": "{{cityId}}", "type": "text" },
+                { "key": "clinicId", "value": "{{clinicId}}", "type": "text" },
+                { "key": "specialization", "value": "{{specialization}}", "type": "text" }
+              ]
+            },
+            "url": "{{baseUrl}}/surgeon-profiles/update/{{profileId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "Regione",
+          "item": [
+            {
+              "name": "Create Regione",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Lombardia\"\n}"
+                },
+                "url": "{{baseUrl}}/regioni"
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const json = pm.response.json();",
+                      "const id = json?.data?.id;",
+                      "if (id) pm.collectionVariables.set('regionId', id);"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Update Regione",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Lombardia Updated\"\n}"
+                },
+                "url": "{{baseUrl}}/regioni/{{regionId}}"
+              }
+            },
+            {
+              "name": "Delete Regione",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+                ],
+                "url": "{{baseUrl}}/regioni/{{regionId}}"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Provincia",
+          "item": [
+            {
+              "name": "Create Provincia",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Milano\",\n  \"regionId\": \"{{regionId}}\"\n}"
+                },
+                "url": "{{baseUrl}}/province"
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const json = pm.response.json();",
+                      "const id = json?.data?.id;",
+                      "if (id) pm.collectionVariables.set('provinceId', id);"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Update Provincia",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Milano Updated\",\n  \"regionId\": \"{{regionId}}\"\n}"
+                },
+                "url": "{{baseUrl}}/province/{{provinceId}}"
+              }
+            },
+            {
+              "name": "Delete Provincia",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+                ],
+                "url": "{{baseUrl}}/province/{{provinceId}}"
+              }
+            }
+          ]
+        },
+        {
+          "name": "City",
+          "item": [
+            {
+              "name": "Create Citta",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Milano Centro\",\n  \"provinceId\": \"{{provinceId}}\"\n}"
+                },
+                "url": "{{baseUrl}}/citta"
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const json = pm.response.json();",
+                      "const id = json?.data?.id;",
+                      "if (id) pm.collectionVariables.set('cityId', id);"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Update Citta",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Milano Centro Updated\",\n  \"provinceId\": \"{{provinceId}}\"\n}"
+                },
+                "url": "{{baseUrl}}/citta/{{cityId}}"
+              }
+            },
+            {
+              "name": "Delete Citta",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+                ],
+                "url": "{{baseUrl}}/citta/{{cityId}}"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Clinic",
+          "item": [
+            {
+              "name": "Create Clinic",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Milano Prime Clinic\",\n  \"cityId\": \"{{cityId}}\"\n}"
+                },
+                "url": "{{baseUrl}}/clinics"
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const json = pm.response.json();",
+                      "const id = json?.data?.id;",
+                      "if (id) pm.collectionVariables.set('clinicId', id);"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Update Clinic",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Milano Prime Clinic Updated\",\n  \"cityId\": \"{{cityId}}\"\n}"
+                },
+                "url": "{{baseUrl}}/clinics/{{clinicId}}"
+              }
+            },
+            {
+              "name": "Delete Clinic",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+                ],
+                "url": "{{baseUrl}}/clinics/{{clinicId}}"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get All Locations",
+          "item": [
+            {
+              "name": "Get Location Tree For Admin Dashboard",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+                ],
+                "url": "{{baseUrl}}/regioni/dashboard-tree"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Public",
+      "item": [
+        {
+          "name": "1) Regione Suggestion",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/regioni?search=lom"
+          }
+        },
+        {
+          "name": "2) Provincia Suggestion By Regione",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/province?regionId={{regionId}}&search=mil"
+          }
+        },
+        {
+          "name": "3) Citta Suggestion By Provincia",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/citta?provinceId={{provinceId}}&search=mil"
+          }
+        },
+        {
+          "name": "4) Clinic Suggestion By Citta",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/clinics?cityId={{cityId}}&search=cli"
+          }
+        },
+        {
+          "name": "5) Specializations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/surgeon-profiles/specializations?search=plas&limit=20"
+          }
+        },
+        {
+          "name": "6) Search Surgeons By Hierarchy + Clinic",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/surgeon-profiles/search?regionId={{regionId}}&provinceId={{provinceId}}&cityId={{cityId}}&clinicId={{clinicId}}&specialization={{specialization}}&search=Dr"
+          }
+        }
+      ]
+    }
+  ],
   "variable": [
-    { "key": "baseUrl", "value": "https://api-simonemiotto.maktechgroup.tech/api/v1" },
-    { "key": "adminEmail", "value": "admin@gmail.com" },
-    { "key": "adminPassword", "value": "Admin@1234" },
-    { "key": "adminAccessToken", "value": "" },
+    { "key": "baseUrl", "value": "http://localhost:3000/api/v1" },
+    { "key": "adminEmail", "value": "admin@example.com" },
+    { "key": "adminPassword", "value": "Password123!" },
+    { "key": "surgeonEmail", "value": "surgeon@example.com" },
+    { "key": "surgeonPassword", "value": "Password123!" },
+    { "key": "adminToken", "value": "" },
+    { "key": "surgeonToken", "value": "" },
     { "key": "regionId", "value": "" },
     { "key": "provinceId", "value": "" },
     { "key": "cityId", "value": "" },
     { "key": "clinicId", "value": "" },
-    { "key": "surgeonProfileId", "value": "" },
-    { "key": "surgeonSlug", "value": "" },
-    { "key": "surgeonAccessToken", "value": "" },
-    { "key": "surgeonEmail", "value": "surgeon@gmail.com" },
-    { "key": "surgeonPassword", "value": "Surgeon@1234"}
-  ],
-  "item": [
-    {
-      "name": "1) Admin Login",
-      "request": {
-        "method": "POST",
-        "header": [
-          { "key": "Content-Type", "value": "application/json" }
-        ],
-        "url": "{{baseUrl}}/auth/login",
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}",
-          "options": { "raw": { "language": "json" } }
-        }
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
-              "const res = pm.response.json();",
-              "const token = res?.data?.tokens?.accessToken || res?.data?.accessToken || res?.data?.token;",
-              "pm.expect(token, 'admin access token missing').to.be.a('string').and.not.empty;",
-              "pm.collectionVariables.set('adminAccessToken', token);"
-            ],
-            "type": "text/javascript"
-          }
-        }
-      ]
-    },
-    {
-      "name": "2) Create Regione (ADMIN)",
-      "request": {
-        "method": "POST",
-        "header": [
-          { "key": "Authorization", "value": "Bearer {{adminAccessToken}}" },
-          { "key": "Content-Type", "value": "application/json" }
-        ],
-        "url": "{{baseUrl}}/regioni",
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"name\": \"Lombardia\"\n}",
-          "options": { "raw": { "language": "json" } }
-        }
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "const res = pm.response.json();",
-              "pm.collectionVariables.set('regionId', res?.data?.id || '');",
-              "pm.test('regionId saved', function () { pm.expect(pm.collectionVariables.get('regionId')).to.not.equal(''); });"
-            ],
-            "type": "text/javascript"
-          }
-        }
-      ]
-    },
-    {
-      "name": "3) Create Provincia (ADMIN)",
-      "request": {
-        "method": "POST",
-        "header": [
-          { "key": "Authorization", "value": "Bearer {{adminAccessToken}}" },
-          { "key": "Content-Type", "value": "application/json" }
-        ],
-        "url": "{{baseUrl}}/province",
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"name\": \"Milano\",\n  \"regionId\": \"{{regionId}}\"\n}",
-          "options": { "raw": { "language": "json" } }
-        }
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "const res = pm.response.json();",
-              "pm.collectionVariables.set('provinceId', res?.data?.id || '');",
-              "pm.test('provinceId saved', function () { pm.expect(pm.collectionVariables.get('provinceId')).to.not.equal(''); });"
-            ],
-            "type": "text/javascript"
-          }
-        }
-      ]
-    },
-    {
-      "name": "4) Create Citta (ADMIN)",
-      "request": {
-        "method": "POST",
-        "header": [
-          { "key": "Authorization", "value": "Bearer {{adminAccessToken}}" },
-          { "key": "Content-Type", "value": "application/json" }
-        ],
-        "url": "{{baseUrl}}/citta",
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"name\": \"Milano\",\n  \"provinceId\": \"{{provinceId}}\"\n}",
-          "options": { "raw": { "language": "json" } }
-        }
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "const res = pm.response.json();",
-              "pm.collectionVariables.set('cityId', res?.data?.id || '');",
-              "pm.test('cityId saved', function () { pm.expect(pm.collectionVariables.get('cityId')).to.not.equal(''); });"
-            ],
-            "type": "text/javascript"
-          }
-        }
-      ]
-    },
-    {
-      "name": "5) Create Clinic (ADMIN)",
-      "request": {
-        "method": "POST",
-        "header": [
-          { "key": "Authorization", "value": "Bearer {{adminAccessToken}}" },
-          { "key": "Content-Type", "value": "application/json" }
-        ],
-        "url": "{{baseUrl}}/clinics",
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"name\": \"Clinica Test\",\n  \"cityId\": \"{{cityId}}\"\n}",
-          "options": { "raw": { "language": "json" } }
-        }
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "const res = pm.response.json();",
-              "pm.collectionVariables.set('clinicId', res?.data?.id || '');",
-              "pm.test('clinicId saved', function () { pm.expect(pm.collectionVariables.get('clinicId')).to.not.equal(''); });"
-            ],
-            "type": "text/javascript"
-          }
-        }
-      ]
-    },
-    {
-      "name": "6) Register Surgeon (multipart)",
-      "request": {
-        "method": "POST",
-        "header": [],
-        "url": "{{baseUrl}}/surgeon-profiles",
-        "body": {
-          "mode": "formdata",
-          "formdata": [
-            { "key": "name", "value": "Dr. Test Surgeon", "type": "text" },
-            { "key": "email", "value": "{{surgeonEmail}}", "type": "text" },
-            { "key": "password", "value": "{{surgeonPassword}}", "type": "text" },
-            { "key": "phone", "value": "+8801700000000", "type": "text" },
-            { "key": "regionId", "value": "{{regionId}}", "type": "text" },
-            { "key": "provinceId", "value": "{{provinceId}}", "type": "text" },
-            { "key": "cityId", "value": "{{cityId}}", "type": "text" },
-            { "key": "clinicId", "value": "{{clinicId}}", "type": "text" },
-            { "key": "specialization", "value": "Plastic Surgery", "type": "text" },
-            { "key": "experienceYears", "value": "5", "type": "text" },
-            { "key": "language", "value": "Italian, English", "type": "text" },
-            { "key": "patientApproach", "value": "Patient-first treatment planning.", "type": "text" },
-            { "key": "education", "value": "[\"MD Milan\"]", "type": "text" },
-            { "key": "areasExpertise", "value": "[\"Rhinoplasty\",\"Facial Surgery\"]", "type": "text" },
-            { "key": "certifications", "value": "[\"Board Certified\"]", "type": "text" },
-            { "key": "procedures", "value": "[{\"title\":\"General\",\"treatments\":[\"Rhinoplasty\"]}]", "type": "text" }
-          ]
-        }
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "const res = pm.response.json();",
-              "const profileId = res?.data?.profile?.id || '';",
-              "const slug = res?.data?.profile?.slug || '';",
-              "const surgeonToken = res?.data?.accessToken || '';",
-              "if (profileId) pm.collectionVariables.set('surgeonProfileId', profileId);",
-              "if (slug) pm.collectionVariables.set('surgeonSlug', slug);",
-              "if (surgeonToken) pm.collectionVariables.set('surgeonAccessToken', surgeonToken);",
-              "pm.test('surgeonProfileId saved', function () { pm.expect(pm.collectionVariables.get('surgeonProfileId')).to.not.equal(''); });"
-            ],
-            "type": "text/javascript"
-          }
-        }
-      ]
-    },
-    {
-      "name": "7) Approve Surgeon (ADMIN)",
-      "request": {
-        "method": "PATCH",
-        "header": [
-          { "key": "Authorization", "value": "Bearer {{adminAccessToken}}" },
-          { "key": "Content-Type", "value": "application/json" }
-        ],
-        "url": "{{baseUrl}}/surgeon-profiles/status/{{surgeonProfileId}}",
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"status\": \"APPROVED\",\n  \"paymentStatus\": \"ACTIVE\"\n}",
-          "options": { "raw": { "language": "json" } }
-        }
-      }
-    },
-    {
-      "name": "8) Search Surgeon by Hierarchy",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": "{{baseUrl}}/surgeon-profiles/search?regionId={{regionId}}&provinceId={{provinceId}}&cityId={{cityId}}&search=Dr"
-      }
-    },
-    {
-      "name": "9) Get Surgeon Profile by ID",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": "{{baseUrl}}/surgeon-profiles/{{surgeonProfileId}}"
-      }
-    },
-    {
-      "name": "10) Update Surgeon Profile Location (SURGEON/ADMIN)",
-      "request": {
-        "method": "PATCH",
-        "header": [
-          { "key": "Authorization", "value": "Bearer {{surgeonAccessToken}}" }
-        ],
-        "url": "{{baseUrl}}/surgeon-profiles/update/{{surgeonProfileId}}",
-        "body": {
-          "mode": "formdata",
-          "formdata": [
-            { "key": "cityId", "value": "{{cityId}}", "type": "text" },
-            { "key": "clinicId", "value": "{{clinicId}}", "type": "text" },
-            { "key": "specialization", "value": "Aesthetic Surgery", "type": "text" },
-            { "key": "bio", "value": "Updated via Postman collection", "type": "text" }
-          ]
-        }
-      }
-    },
-    {
-      "name": "11) Get Regione List (PUBLIC)",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": "{{baseUrl}}/regioni"
-      }
-    },
-    {
-      "name": "12) Get Provincia List (PUBLIC)",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": "{{baseUrl}}/province?regionId={{regionId}}"
-      }
-    },
-    {
-      "name": "13) Get Citta List (PUBLIC)",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": "{{baseUrl}}/citta?provinceId={{provinceId}}"
-      }
-    },
-    {
-      "name": "13.1) Suggest Regione by text (PUBLIC)",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": "{{baseUrl}}/regioni?search=lom"
-      }
-    },
-    {
-      "name": "13.2) Suggest Provincia by region + text (PUBLIC)",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": "{{baseUrl}}/province?regionId={{regionId}}&search=mil"
-      }
-    },
-    {
-      "name": "13.3) Suggest Citta by province + text (PUBLIC)",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": "{{baseUrl}}/citta?provinceId={{provinceId}}&search=mil"
-      }
-    },
-    {
-      "name": "14) Update Regione (ADMIN)",
-      "request": {
-        "method": "PATCH",
-        "header": [
-          { "key": "Authorization", "value": "Bearer {{adminAccessToken}}" },
-          { "key": "Content-Type", "value": "application/json" }
-        ],
-        "url": "{{baseUrl}}/regioni/{{regionId}}",
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"name\": \"Lombardia Updated\"\n}",
-          "options": { "raw": { "language": "json" } }
-        }
-      }
-    },
-    {
-      "name": "15) Delete Citta (ADMIN)",
-      "request": {
-        "method": "DELETE",
-        "header": [
-          { "key": "Authorization", "value": "Bearer {{adminAccessToken}}" }
-        ],
-        "url": "{{baseUrl}}/citta/{{cityId}}"
-      }
-    }
+    { "key": "profileId", "value": "" },
+    { "key": "specialization", "value": "Plastic Surgery" }
   ]
 }

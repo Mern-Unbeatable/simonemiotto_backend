@@ -35,19 +35,56 @@ class RegioneService {
 
     return prisma.region.findMany({
       where,
-      include: {
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+      orderBy: { name: 'asc' },
+    });
+  }
+
+  async getDashboardTree() {
+    return prisma.region.findMany({
+      where: { isDeleted: false },
+      orderBy: { name: 'asc' },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
         provinces: {
           where: { isDeleted: false },
           orderBy: { name: 'asc' },
-          include: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            regionId: true,
             cities: {
               where: { isDeleted: false },
               orderBy: { name: 'asc' },
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+                provinceId: true,
+                clinics: {
+                  where: { isDeleted: false },
+                  orderBy: { name: 'asc' },
+                  select: {
+                    id: true,
+                    name: true,
+                    slug: true,
+                    cityId: true,
+                  },
+                },
+              },
             },
           },
         },
       },
-      orderBy: { name: 'asc' },
     });
   }
 

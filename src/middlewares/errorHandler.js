@@ -37,6 +37,20 @@ const handlePrismaError = (error) => {
   const { code, message } = error;
 
   switch (code) {
+    case 'P1001':
+      // Cannot reach database server
+      return new AppError(
+        'Database is temporarily unreachable. Please try again shortly.',
+        503,
+      );
+
+    case 'P1017':
+      // Server closed the connection
+      return new AppError(
+        'Database connection was closed by server. Please retry.',
+        503,
+      );
+
     case 'P2002':
       // Unique constraint violation
       const field = error.meta?.target?.[0] || 'field';
@@ -132,7 +146,7 @@ const errorHandler = (error, req, res, next) => {
   });
 
   // Handle specific error types
-  if (error.code && error.code.startsWith('P2')) {
+  if (error.code && /^P\d+/.test(error.code)) {
     err = handlePrismaError(error);
   } else if (
     error.name === 'JsonWebTokenError' ||

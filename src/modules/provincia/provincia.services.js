@@ -51,12 +51,13 @@ class ProvinciaService {
 
     return prisma.province.findMany({
       where,
-      include: {
-        region: { select: { id: true, name: true, slug: true } },
-        cities: {
-          where: { isDeleted: false },
-          orderBy: { name: 'asc' },
-        },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        regionId: true,
+        createdAt: true,
+        updatedAt: true,
       },
       orderBy: { name: 'asc' },
     });

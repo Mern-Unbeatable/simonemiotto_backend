@@ -12,9 +12,9 @@ class ClinicController {
   });
 
   getAll = asyncHandler(async (req, res) => {
-    const stateId = req.query.cityId;
-    const result = await this.service.getAll(stateId);
-    res.sendSuccess(result, 'Clinic retrieved successfully');
+    const { cityId, search } = req.query;
+    const result = await this.service.getAll(cityId, search);
+    res.sendSuccess(result, 'Clinic suggestions retrieved successfully');
   });
 
   getById = asyncHandler(async (req, res) => {

@@ -7,6 +7,7 @@ class filterSurgeonDTO {
     this.search = query.search;
     this.specialization = query.specialization;
     this.clinic = query.clinic;
+    this.clinicId = query.clinicId || null;
     this.status = query.status;
     this.paymentStatus = query.paymentStatus;
 

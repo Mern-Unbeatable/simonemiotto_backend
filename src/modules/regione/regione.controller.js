@@ -16,6 +16,11 @@ class RegioneController {
     res.sendSuccess(result, 'Regioni retrieved successfully');
   });
 
+  getDashboardTree = asyncHandler(async (req, res) => {
+    const result = await this.service.getDashboardTree();
+    res.sendSuccess(result, 'Location dashboard tree retrieved successfully');
+  });
+
   getById = asyncHandler(async (req, res) => {
     const result = await this.service.getById(req.params.id);
     res.sendSuccess(result, 'Regione retrieved successfully');

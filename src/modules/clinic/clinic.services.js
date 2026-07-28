@@ -26,10 +26,29 @@ class ClinicService {
     });
   }
 
-  async getAll(cityId) {
+  async getAll(cityId, search) {
+    const where = {
+      isDeleted: false,
+      ...(cityId ? { cityId } : {}),
+      ...(search
+        ? {
+            OR: [
+              { name: { contains: search, mode: 'insensitive' } },
+              { slug: { contains: search.toLowerCase() } },
+            ],
+          }
+        : {}),
+    };
+
     return prisma.clinic.findMany({
-      where: { cityId, isDeleted: false },
-      orderBy: { createdAt: 'asc' },
+      where,
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        cityId: true,
+      },
+      orderBy: { name: 'asc' },
     });
   }
 

@@ -178,6 +178,7 @@ class surgeonProfileService {
       search,
       limit,
       clinic,
+      clinicId,
       specialization,
       status = 'APPROVED',
       paymentStatus = 'ACTIVE',
@@ -219,6 +220,10 @@ class surgeonProfileService {
     // 3. Filter: Clinic via unique slug reference matching
     if (clinic) {
       whereCondition.push({ clinic: { slug: clinic } });
+    }
+
+    if (clinicId) {
+      whereCondition.push({ clinicId });
     }
 
     // 4. Filter: Regione > Provincia > Città
@@ -346,6 +351,8 @@ class surgeonProfileService {
   async searchSurgeonsByName(filterDTO = {}) {
     const {
       search: searchString,
+      specialization,
+      clinicId,
       limit = 10,
       status = 'APPROVED',
       paymentStatus = 'ACTIVE',
@@ -386,6 +393,16 @@ class surgeonProfileService {
     const locationWhere = buildLocationWhere(filterDTO);
     if (locationWhere) {
       whereCondition.push(locationWhere);
+    }
+
+    if (specialization && String(specialization).trim() !== '') {
+      whereCondition.push({
+        specialization: { contains: String(specialization).trim(), mode: 'insensitive' },
+      });
+    }
+
+    if (clinicId) {
+      whereCondition.push({ clinicId });
     }
 
     if (status) {
@@ -474,6 +491,29 @@ class surgeonProfileService {
     }));
   }
 
+  async getPublicSpecializations(search, limit = 100) {
+    const where = search
+      ? {
+          specialization: {
+            contains: search,
+            mode: 'insensitive',
+          },
+        }
+      : {};
+
+    const rows = await prisma.surgeonProfile.findMany({
+      where,
+      select: { specialization: true },
+      distinct: ['specialization'],
+      orderBy: { specialization: 'asc' },
+      take: parseInt(limit, 10) || 100,
+    });
+
+    return rows
+      .map((r) => r.specialization)
+      .filter(Boolean);
+  }
+
   async getSurgeonProfilesAdmin(filterDTO) {
     const {
       sortBy,
@@ -482,6 +522,7 @@ class surgeonProfileService {
       limit,
       paymentStatus,
       clinic,
+      clinicId,
       specialization,
       status,
     } = filterDTO;
@@ -504,6 +545,10 @@ class surgeonProfileService {
 
     if (clinic) {
       whereCondition.push({ clinic: { slug: clinic } });
+    }
+
+    if (clinicId) {
+      whereCondition.push({ clinicId });
     }
 
     const locationWhere = buildLocationWhere(filterDTO);

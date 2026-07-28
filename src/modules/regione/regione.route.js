@@ -25,6 +25,13 @@ router.post(
 router.get('/', controller.getAll);
 
 router.get(
+  '/dashboard-tree',
+  authenticate,
+  authorize(['ADMIN']),
+  controller.getDashboardTree,
+);
+
+router.get(
   '/:id',
   validateParams(IdParamSchema),
   controller.getById,

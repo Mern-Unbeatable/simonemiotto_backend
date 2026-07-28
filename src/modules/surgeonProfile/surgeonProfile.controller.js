@@ -62,6 +62,14 @@ class SurgeonProfileController {
     res.sendSuccess(result, 'Surgeons profiles retrieved successfully');
   });
 
+  getSpecializations = asyncHandler(async (req, res) => {
+    const result = await this.profileService.getPublicSpecializations(
+      req.query.search,
+      req.query.limit,
+    );
+    res.sendSuccess(result, 'Specializations retrieved successfully');
+  });
+
   getProfileAdmin = asyncHandler(async (req, res) => {
     const filterDTO = new filterSurgeonDTO(req.query);
     const result = await this.profileService.getSurgeonProfilesAdmin(filterDTO);

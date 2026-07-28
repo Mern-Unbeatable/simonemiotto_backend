@@ -58,19 +58,13 @@ class CittaService {
 
     return prisma.city.findMany({
       where,
-      include: {
-        province: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-            region: { select: { id: true, name: true, slug: true } },
-          },
-        },
-        clinics: {
-          where: { isDeleted: false },
-          orderBy: { createdAt: 'asc' },
-        },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        provinceId: true,
+        createdAt: true,
+        updatedAt: true,
       },
       orderBy: { name: 'asc' },
     });
