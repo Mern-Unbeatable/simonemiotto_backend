@@ -20,9 +20,21 @@ class RegioneService {
     });
   }
 
-  async getAll() {
+  async getAll(search) {
+    const where = {
+      isDeleted: false,
+      ...(search
+        ? {
+            OR: [
+              { name: { contains: search, mode: 'insensitive' } },
+              { slug: { contains: search.toLowerCase() } },
+            ],
+          }
+        : {}),
+    };
+
     return prisma.region.findMany({
-      where: { isDeleted: false },
+      where,
       include: {
         provinces: {
           where: { isDeleted: false },

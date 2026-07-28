@@ -12,7 +12,7 @@ class CittaController {
   });
 
   getAll = asyncHandler(async (req, res) => {
-    const result = await this.service.getAll(req.query.provinceId);
+    const result = await this.service.getAll(req.query.provinceId, req.query.search);
     res.sendSuccess(result, 'Città retrieved successfully');
   });
 

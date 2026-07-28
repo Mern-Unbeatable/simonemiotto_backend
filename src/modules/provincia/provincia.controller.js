@@ -12,7 +12,7 @@ class ProvinciaController {
   });
 
   getAll = asyncHandler(async (req, res) => {
-    const result = await this.service.getAll(req.query.regionId);
+    const result = await this.service.getAll(req.query.regionId, req.query.search);
     res.sendSuccess(result, 'Province retrieved successfully');
   });
 

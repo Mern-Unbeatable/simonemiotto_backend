@@ -42,10 +42,18 @@ class CittaService {
     });
   }
 
-  async getAll(provinceId) {
+  async getAll(provinceId, search) {
     const where = {
       isDeleted: false,
       ...(provinceId ? { provinceId } : {}),
+      ...(search
+        ? {
+            OR: [
+              { name: { contains: search, mode: 'insensitive' } },
+              { slug: { contains: search.toLowerCase() } },
+            ],
+          }
+        : {}),
     };
 
     return prisma.city.findMany({

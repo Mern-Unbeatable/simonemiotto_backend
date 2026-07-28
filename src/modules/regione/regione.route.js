@@ -22,12 +22,10 @@ router.post(
   controller.create,
 );
 
-router.get('/', authenticate, authorize(['ADMIN']), controller.getAll);
+router.get('/', controller.getAll);
 
 router.get(
   '/:id',
-  authenticate,
-  authorize(['ADMIN']),
   validateParams(IdParamSchema),
   controller.getById,
 );

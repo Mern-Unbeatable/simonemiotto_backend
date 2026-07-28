@@ -294,6 +294,36 @@
       }
     },
     {
+      "name": "13.1) Suggest Regione by text (ADMIN-only)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{adminAccessToken}}" }
+        ],
+        "url": "{{baseUrl}}/regioni?search=lom"
+      }
+    },
+    {
+      "name": "13.2) Suggest Provincia by region + text (ADMIN-only)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{adminAccessToken}}" }
+        ],
+        "url": "{{baseUrl}}/province?regionId={{regionId}}&search=mil"
+      }
+    },
+    {
+      "name": "13.3) Suggest Citta by province + text (ADMIN-only)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{adminAccessToken}}" }
+        ],
+        "url": "{{baseUrl}}/citta?provinceId={{provinceId}}&search=mil"
+      }
+    },
+    {
       "name": "14) Update Regione (ADMIN)",
       "request": {
         "method": "PATCH",

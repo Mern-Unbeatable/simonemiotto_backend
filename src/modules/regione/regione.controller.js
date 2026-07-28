@@ -12,7 +12,7 @@ class RegioneController {
   });
 
   getAll = asyncHandler(async (req, res) => {
-    const result = await this.service.getAll();
+    const result = await this.service.getAll(req.query.search);
     res.sendSuccess(result, 'Regioni retrieved successfully');
   });
 

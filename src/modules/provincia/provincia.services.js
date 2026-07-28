@@ -35,10 +35,18 @@ class ProvinciaService {
     });
   }
 
-  async getAll(regionId) {
+  async getAll(regionId, search) {
     const where = {
       isDeleted: false,
       ...(regionId ? { regionId } : {}),
+      ...(search
+        ? {
+            OR: [
+              { name: { contains: search, mode: 'insensitive' } },
+              { slug: { contains: search.toLowerCase() } },
+            ],
+          }
+        : {}),
     };
 
     return prisma.province.findMany({
