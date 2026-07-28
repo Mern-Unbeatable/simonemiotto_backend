@@ -22,6 +22,8 @@ class surgeonProfileService {
       email,
       password,
       phone,
+      regionId,
+      provinceId,
       cityId,
       clinicId,
       specialization,
@@ -61,6 +63,14 @@ class surgeonProfileService {
 
     if (!city) {
       throw new AppError('Città not found', 404);
+    }
+
+    if (city.provinceId !== provinceId) {
+      throw new AppError('Città does not belong to selected Provincia', 400);
+    }
+
+    if (city.province?.regionId !== regionId) {
+      throw new AppError('Provincia does not belong to selected Regione', 400);
     }
 
     if (!clinic) {
@@ -137,6 +147,8 @@ class surgeonProfileService {
         profile: {
           id: profile.id,
           slug: profile.slug,
+          regionId: city.province?.regionId || null,
+          provinceId: city.provinceId,
           cityId: profile.cityId,
           clinicId: profile.clinicId,
           location: {
@@ -723,6 +735,36 @@ class surgeonProfileService {
     const dtoData = { ...data };
     const userData = {};
 
+    if (dtoData.regionId || dtoData.provinceId || dtoData.cityId) {
+      const targetCityId = dtoData.cityId || (await prisma.surgeonProfile.findUnique({
+        where: { id },
+        select: { cityId: true },
+      }))?.cityId;
+
+      if (!targetCityId) {
+        throw new AppError('Città is required for location update', 400);
+      }
+
+      const city = await prisma.city.findUnique({
+        where: { id: targetCityId },
+        include: {
+          province: true,
+        },
+      });
+
+      if (!city) {
+        throw new AppError('Città not found', 404);
+      }
+
+      if (dtoData.provinceId && city.provinceId !== dtoData.provinceId) {
+        throw new AppError('Città does not belong to selected Provincia', 400);
+      }
+
+      if (dtoData.regionId && city.province?.regionId !== dtoData.regionId) {
+        throw new AppError('Provincia does not belong to selected Regione', 400);
+      }
+    }
+
     if (dtoData.name !== undefined) {
       userData.name = dtoData.name;
     }
@@ -745,6 +787,8 @@ class surgeonProfileService {
 
     delete dtoData.id;
     delete dtoData.userId;
+    delete dtoData.regionId;
+    delete dtoData.provinceId;
     delete dtoData.createdAt;
     delete dtoData.updatedAt;
 

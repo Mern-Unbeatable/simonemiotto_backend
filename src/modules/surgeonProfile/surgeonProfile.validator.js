@@ -1,6 +1,8 @@
 const Joi = require('joi');
 
 const createSurgeonProfileSchema = Joi.object({
+  regionId: Joi.string().trim().required(),
+  provinceId: Joi.string().trim().required(),
   clinicId: Joi.string().trim().required(),
   cityId: Joi.string().trim().required(),
   name: Joi.string().trim().required(),
@@ -51,6 +53,8 @@ const createSurgeonProfileSchema = Joi.object({
 
 const updateSurgeonProfileSchema = Joi.object({
   userId: Joi.string().trim().optional(),
+  regionId: Joi.string().trim().optional(),
+  provinceId: Joi.string().trim().optional(),
   clinicId: Joi.string().trim().optional(),
   cityId: Joi.string().trim().optional(),
   name: Joi.string().trim().optional(),

@@ -180,6 +180,8 @@
             { "key": "email", "value": "{{surgeonEmail}}", "type": "text" },
             { "key": "password", "value": "{{surgeonPassword}}", "type": "text" },
             { "key": "phone", "value": "+8801700000000", "type": "text" },
+            { "key": "regionId", "value": "{{regionId}}", "type": "text" },
+            { "key": "provinceId", "value": "{{provinceId}}", "type": "text" },
             { "key": "cityId", "value": "{{cityId}}", "type": "text" },
             { "key": "clinicId", "value": "{{clinicId}}", "type": "text" },
             { "key": "specialization", "value": "Plastic Surgery", "type": "text" },
@@ -264,62 +266,50 @@
       }
     },
     {
-      "name": "11) Get Regione List (ADMIN-only)",
+      "name": "11) Get Regione List (PUBLIC)",
       "request": {
         "method": "GET",
-        "header": [
-          { "key": "Authorization", "value": "Bearer {{adminAccessToken}}" }
-        ],
+        "header": [],
         "url": "{{baseUrl}}/regioni"
       }
     },
     {
-      "name": "12) Get Provincia List (ADMIN-only)",
+      "name": "12) Get Provincia List (PUBLIC)",
       "request": {
         "method": "GET",
-        "header": [
-          { "key": "Authorization", "value": "Bearer {{adminAccessToken}}" }
-        ],
+        "header": [],
         "url": "{{baseUrl}}/province?regionId={{regionId}}"
       }
     },
     {
-      "name": "13) Get Citta List (ADMIN-only)",
+      "name": "13) Get Citta List (PUBLIC)",
       "request": {
         "method": "GET",
-        "header": [
-          { "key": "Authorization", "value": "Bearer {{adminAccessToken}}" }
-        ],
+        "header": [],
         "url": "{{baseUrl}}/citta?provinceId={{provinceId}}"
       }
     },
     {
-      "name": "13.1) Suggest Regione by text (ADMIN-only)",
+      "name": "13.1) Suggest Regione by text (PUBLIC)",
       "request": {
         "method": "GET",
-        "header": [
-          { "key": "Authorization", "value": "Bearer {{adminAccessToken}}" }
-        ],
+        "header": [],
         "url": "{{baseUrl}}/regioni?search=lom"
       }
     },
     {
-      "name": "13.2) Suggest Provincia by region + text (ADMIN-only)",
+      "name": "13.2) Suggest Provincia by region + text (PUBLIC)",
       "request": {
         "method": "GET",
-        "header": [
-          { "key": "Authorization", "value": "Bearer {{adminAccessToken}}" }
-        ],
+        "header": [],
         "url": "{{baseUrl}}/province?regionId={{regionId}}&search=mil"
       }
     },
     {
-      "name": "13.3) Suggest Citta by province + text (ADMIN-only)",
+      "name": "13.3) Suggest Citta by province + text (PUBLIC)",
       "request": {
         "method": "GET",
-        "header": [
-          { "key": "Authorization", "value": "Bearer {{adminAccessToken}}" }
-        ],
+        "header": [],
         "url": "{{baseUrl}}/citta?provinceId={{provinceId}}&search=mil"
       }
     },
