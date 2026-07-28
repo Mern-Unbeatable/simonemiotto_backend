@@ -215,7 +215,21 @@ class surgeonProfileService {
         where: finalWhere,
         include: {
           city: {
-            select: { id: true, name: true },
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              province: {
+                select: {
+                  id: true,
+                  name: true,
+                  slug: true,
+                  region: {
+                    select: { id: true, name: true, slug: true },
+                  },
+                },
+              },
+            },
           },
           clinic: {
             select: { id: true, name: true },
@@ -267,6 +281,8 @@ class surgeonProfileService {
         language: profile.language,
 
         city: profile.city?.name || null,
+        province: profile.city?.province?.name || null,
+        region: profile.city?.province?.region?.name || null,
         clinic: profile.clinic?.name || null,
         availability: profile.availability || null,
         address: profile.address || null,
@@ -318,7 +334,19 @@ class surgeonProfileService {
         name: true,
         slug: true,
         city: {
-          select: { name: true, slug: true },
+          select: {
+            name: true,
+            slug: true,
+            province: {
+              select: {
+                name: true,
+                slug: true,
+                region: {
+                  select: { name: true, slug: true },
+                },
+              },
+            },
+          },
         },
         clinic: {
           select: { name: true, slug: true },
@@ -409,7 +437,21 @@ class surgeonProfileService {
         where: finalWhere,
         include: {
           city: {
-            select: { id: true, name: true },
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              province: {
+                select: {
+                  id: true,
+                  name: true,
+                  slug: true,
+                  region: {
+                    select: { id: true, name: true, slug: true },
+                  },
+                },
+              },
+            },
           },
           clinic: {
             select: { id: true, name: true },
@@ -449,6 +491,8 @@ class surgeonProfileService {
         experienceYears: profile.experienceYears,
         language: profile.language,
         city: profile.city?.name || null,
+        province: profile.city?.province?.name || null,
+        region: profile.city?.province?.region?.name || null,
         clinic: profile.clinic?.name || null,
         availability: profile.availability || null,
         address: profile.address || null,

@@ -1,6 +1,6 @@
 const Joi = require('joi');
 
-const createCitySchema = Joi.object({
+const createRegioneSchema = Joi.object({
   name: Joi.string().trim().min(2).max(100).required(),
   slug: Joi.string()
     .trim()
@@ -9,7 +9,7 @@ const createCitySchema = Joi.object({
     .optional(),
 });
 
-const updateCitySchema = Joi.object({
+const updateRegioneSchema = Joi.object({
   name: Joi.string().trim().min(2).max(100).optional(),
   slug: Joi.string()
     .trim()
@@ -19,6 +19,6 @@ const updateCitySchema = Joi.object({
 }).min(1);
 
 module.exports = {
-  createCitySchema,
-  updateCitySchema,
+  createRegioneSchema,
+  updateRegioneSchema,
 };

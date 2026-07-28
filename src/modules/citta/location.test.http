@@ -1,0 +1,78 @@
+### Location hierarchy tests: Regione > Provincia > Città
+### Base URL
+@baseUrl = http://localhost:3000/api/v1
+@token = {{login.response.body.data.tokens.accessToken}}
+@regionId = {{createRegione.response.body.data.id}}
+@provinceId = {{createProvincia.response.body.data.id}}
+@cityId = {{createCitta.response.body.data.id}}
+
+### 0) Health
+GET {{baseUrl}}/health
+
+### 1) Login as ADMIN (replace email/password)
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "YourAdminPassword"
+}
+
+### 2) Create Regione
+# @name createRegione
+POST {{baseUrl}}/regioni
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Lombardia"
+}
+
+### 3) List Regioni (nested tree: provinces + cities)
+GET {{baseUrl}}/regioni
+
+### 4) Create Provincia under Regione
+# @name createProvincia
+POST {{baseUrl}}/province
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Milano",
+  "regionId": "{{regionId}}"
+}
+
+### 5) List Province filtered by Regione
+GET {{baseUrl}}/province?regionId={{regionId}}
+
+### 6) Create Città under Provincia
+# @name createCitta
+POST {{baseUrl}}/citta
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Milano",
+  "provinceId": "{{provinceId}}"
+}
+
+### 7) List Città filtered by Provincia
+GET {{baseUrl}}/citta?provinceId={{provinceId}}
+
+### 8) Get single Città (includes province + region)
+GET {{baseUrl}}/citta/{{cityId}}
+
+### 9) Create Clinic under Città (optional next step)
+POST {{baseUrl}}/clinics
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Clinica Centrale",
+  "cityId": "{{cityId}}"
+}
+
+### 10) Soft-delete Città (ADMIN)
+DELETE {{baseUrl}}/citta/{{cityId}}
+Authorization: Bearer {{token}}

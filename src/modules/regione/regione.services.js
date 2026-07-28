@@ -1,7 +1,7 @@
 const { prisma } = require('../../config/database');
 const { AppError } = require('../../middlewares/errorHandler');
 
-class CityService {
+class RegioneService {
   slugify(value) {
     return value
       .toLowerCase()
@@ -12,42 +12,55 @@ class CityService {
   }
 
   async create(data) {
-    const categoryName = data.name.trim();
-    const slug = data.slug
-      ? this.slugify(data.slug)
-      : this.slugify(categoryName);
+    const name = data.name.trim();
+    const slug = data.slug ? this.slugify(data.slug) : this.slugify(name);
 
-    return prisma.city.create({
-      data: {
-        name: categoryName,
-        slug,
-      },
+    return prisma.region.create({
+      data: { name, slug },
     });
   }
 
   async getAll() {
-    return prisma.city.findMany({
+    return prisma.region.findMany({
       where: { isDeleted: false },
       include: {
-        clinics: {
+        provinces: {
           where: { isDeleted: false },
-          orderBy: { createdAt: 'asc' },
+          orderBy: { name: 'asc' },
+          include: {
+            cities: {
+              where: { isDeleted: false },
+              orderBy: { name: 'asc' },
+            },
+          },
         },
       },
-      orderBy: { createdAt: 'asc' },
+      orderBy: { name: 'asc' },
     });
   }
 
   async getById(id) {
-    const category = await prisma.city.findUnique({
-      where: { id },
+    const region = await prisma.region.findFirst({
+      where: { id, isDeleted: false },
+      include: {
+        provinces: {
+          where: { isDeleted: false },
+          orderBy: { name: 'asc' },
+          include: {
+            cities: {
+              where: { isDeleted: false },
+              orderBy: { name: 'asc' },
+            },
+          },
+        },
+      },
     });
 
-    if (!category) {
-      throw new AppError('city not found', 404);
+    if (!region) {
+      throw new AppError('Regione not found', 404);
     }
 
-    return category;
+    return region;
   }
 
   async update(id, data) {
@@ -62,7 +75,7 @@ class CityService {
       updateData.slug = this.slugify(data.name);
     }
 
-    return prisma.city.update({
+    return prisma.region.update({
       where: { id },
       data: updateData,
     });
@@ -71,7 +84,7 @@ class CityService {
   async delete(id) {
     await this.getById(id);
 
-    await prisma.city.update({
+    await prisma.region.update({
       where: { id },
       data: { isDeleted: true },
     });
@@ -80,4 +93,4 @@ class CityService {
   }
 }
 
-module.exports = CityService;
+module.exports = RegioneService;

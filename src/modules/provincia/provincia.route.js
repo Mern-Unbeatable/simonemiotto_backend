@@ -5,17 +5,20 @@ const {
   validateParams,
   IdParamSchema,
 } = require('../../validators/common.validator');
-const CityController = require('./city.controller');
-const { createCitySchema, updateCitySchema } = require('./city.validator');
+const ProvinciaController = require('./provincia.controller');
+const {
+  createProvinciaSchema,
+  updateProvinciaSchema,
+} = require('./provincia.validator');
 
 const router = express.Router();
-const controller = new CityController();
+const controller = new ProvinciaController();
 
 router.post(
   '/',
   authenticate,
   authorize(['ADMIN']),
-  validate(createCitySchema),
+  validate(createProvinciaSchema),
   controller.create,
 );
 
@@ -28,7 +31,7 @@ router.patch(
   authenticate,
   authorize(['ADMIN']),
   validateParams(IdParamSchema),
-  validate(updateCitySchema),
+  validate(updateProvinciaSchema),
   controller.update,
 );
 

@@ -276,7 +276,17 @@ class DashboardService {
         where: whereClause,
         select: {
           city: {
-            select: { name: true },
+            select: {
+              name: true,
+              province: {
+                select: {
+                  name: true,
+                  region: {
+                    select: { name: true },
+                  },
+                },
+              },
+            },
           },
         },
       }),

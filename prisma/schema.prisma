@@ -122,15 +122,50 @@ model SubscriptionTier {
   @@map("subscription_plans")
 }
 
+// Location hierarchy: Regione > Provincia > Città
+model Region {
+  id         String     @id @default(cuid())
+  name       String     @unique
+  slug       String
+  isDeleted  Boolean    @default(false)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  provinces  Province[]
+
+  @@map("regions")
+}
+
+model Province {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String
+  isDeleted Boolean  @default(false)
+  regionId  String
+  region    Region   @relation(fields: [regionId], references: [id], onDelete: Cascade)
+  cities    City[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([name, regionId])
+  @@index([regionId])
+  @@map("provinces")
+}
+
 model City {
   id              String           @id @default(cuid())
-  name            String           @unique
+  name            String
   slug            String
   isDeleted       Boolean          @default(false)
+  provinceId      String
+  province        Province         @relation(fields: [provinceId], references: [id], onDelete: Cascade)
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
   clinics         Clinic[]
   surgeonProfiles SurgeonProfile[]
+
+  @@unique([name, provinceId])
+  @@index([provinceId])
+  @@map("cities")
 }
 
 model Clinic {
