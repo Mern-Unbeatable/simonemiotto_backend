@@ -26,6 +26,7 @@ const API_PREFIX = '/api/v1';
 // const uploadsPath = path.join(__dirname, '..', 'uploads');
 const uploadsPath = path.join(process.cwd(), 'uploads');
 app.use('/uploads', express.static(uploadsPath));
+app.use(express.static(path.join(process.cwd(), 'public')));
 // Trust proxy for production deployment
 app.set('trust proxy', 1);
 
@@ -33,6 +34,7 @@ app.set('trust proxy', 1);
 app.use(
   helmet({
     crossOriginResourcePolicy: { policy: 'cross-origin' },
+    contentSecurityPolicy: false,
   }),
 );
 

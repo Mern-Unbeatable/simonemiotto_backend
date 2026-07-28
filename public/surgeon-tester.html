@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Surgeon Tester — Regione › Provincia › Città</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: { accent: '#0f766e', ink: '#0f172a' },
+          },
+        },
+      };
+    </script>
+    <style>
+      .tab.active { background: #0f766e; color: #fff; }
+      pre { white-space: pre-wrap; word-break: break-word; }
+    </style>
+  </head>
+  <body class="bg-slate-50 text-ink min-h-screen">
+    <header class="bg-white border-b">
+      <div class="max-w-6xl mx-auto px-4 py-4 flex flex-wrap gap-3 items-center justify-between">
+        <div>
+          <h1 class="text-xl font-semibold">Surgeon Tester</h1>
+          <p class="text-sm text-slate-500">Regione › Provincia › Città for search, register & update</p>
+        </div>
+        <input id="apiBase" class="border rounded-md px-3 py-1.5 text-sm w-72 bg-slate-100" value="http://localhost:3000/api/v1" />
+      </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 py-6 grid lg:grid-cols-[1fr_360px] gap-6">
+      <section class="space-y-4">
+        <div class="flex flex-wrap gap-2">
+          <button class="tab active px-3 py-1.5 rounded-md text-sm border" data-tab="search">Search</button>
+          <button class="tab px-3 py-1.5 rounded-md text-sm border bg-white" data-tab="register">Register</button>
+          <button class="tab px-3 py-1.5 rounded-md text-sm border bg-white" data-tab="update">Update Profile</button>
+          <button class="tab px-3 py-1.5 rounded-md text-sm border bg-white" data-tab="setup">Location Setup</button>
+        </div>
+
+        <!-- SEARCH -->
+        <div id="panel-search" class="panel bg-white border rounded-xl p-5 space-y-4">
+          <h2 class="font-semibold">Search surgeons by location</h2>
+          <p class="text-sm text-slate-500">Pick Regione → Provincia → Città, optional name. Suggestions update live.</p>
+
+          <div class="grid sm:grid-cols-3 gap-3" id="searchCascade"></div>
+
+          <div class="flex flex-wrap gap-2 items-center">
+            <input id="searchName" class="flex-1 min-w-[180px] border rounded-md px-3 py-2 text-sm" placeholder="Optional: surgeon name / specialization" />
+            <label class="text-xs flex items-center gap-1 border rounded-md px-2 py-2">
+              <input type="checkbox" id="searchAllStatus" />
+              Include PENDING (admin list)
+            </label>
+            <button id="searchBtn" class="bg-accent text-white rounded-md px-4 py-2 text-sm">Search</button>
+          </div>
+
+          <div id="suggestions" class="space-y-2"></div>
+        </div>
+
+        <!-- REGISTER -->
+        <div id="panel-register" class="panel hidden bg-white border rounded-xl p-5 space-y-4">
+          <h2 class="font-semibold">Surgeon registration</h2>
+          <p class="text-sm text-slate-500">Select location cascade, then clinic under that Città.</p>
+
+          <form id="registerForm" class="space-y-4">
+            <div class="grid sm:grid-cols-3 gap-3" id="regCascade"></div>
+            <div>
+              <label class="text-xs text-slate-500">Clinic *</label>
+              <select id="regClinic" name="clinicId" required class="w-full border rounded-md px-3 py-2 text-sm"></select>
+            </div>
+
+            <div class="grid sm:grid-cols-2 gap-3">
+              <input name="name" required placeholder="Full name *" class="border rounded-md px-3 py-2 text-sm" />
+              <input name="email" type="email" required placeholder="Email *" class="border rounded-md px-3 py-2 text-sm" />
+              <input name="password" type="password" required minlength="6" placeholder="Password *" class="border rounded-md px-3 py-2 text-sm" />
+              <input name="phone" required placeholder="Phone *" class="border rounded-md px-3 py-2 text-sm" />
+              <input name="specialization" required value="Plastic Surgery" placeholder="Specialization *" class="border rounded-md px-3 py-2 text-sm" />
+              <input name="experienceYears" type="number" min="0" required value="5" placeholder="Years *" class="border rounded-md px-3 py-2 text-sm" />
+              <input name="language" required value="Italian, English" placeholder="Language *" class="border rounded-md px-3 py-2 text-sm" />
+              <input name="availability" value="Mon-Fri" placeholder="Availability" class="border rounded-md px-3 py-2 text-sm" />
+            </div>
+            <textarea name="patientApproach" required rows="2" class="w-full border rounded-md px-3 py-2 text-sm" placeholder="Patient approach *">Clear consultation and tailored treatment plans.</textarea>
+            <input name="educationText" required value="MD Milan" class="w-full border rounded-md px-3 py-2 text-sm" placeholder="Education (comma) *" />
+            <input name="expertiseText" required value="Rhinoplasty, Breast Augmentation" class="w-full border rounded-md px-3 py-2 text-sm" placeholder="Expertise (comma) *" />
+            <input name="certText" required value="Board Certified" class="w-full border rounded-md px-3 py-2 text-sm" placeholder="Certifications (comma) *" />
+            <div class="grid sm:grid-cols-2 gap-3">
+              <input name="avatarUrl" type="file" accept="image/*" class="text-sm" />
+              <input name="images" type="file" accept="image/*" multiple class="text-sm" />
+            </div>
+            <button class="bg-accent text-white rounded-md px-4 py-2 text-sm">Create surgeon</button>
+          </form>
+        </div>
+
+        <!-- UPDATE -->
+        <div id="panel-update" class="panel hidden bg-white border rounded-xl p-5 space-y-4">
+          <h2 class="font-semibold">Update profile location</h2>
+          <p class="text-sm text-slate-500">Needs SURGEON/ADMIN token. Load profile, change Regione › Provincia › Città (+ clinic).</p>
+
+          <div class="grid sm:grid-cols-2 gap-3">
+            <input id="updateToken" class="border rounded-md px-3 py-2 text-sm" placeholder="Bearer accessToken" />
+            <div class="flex gap-2">
+              <input id="updateProfileId" class="flex-1 border rounded-md px-3 py-2 text-sm" placeholder="Profile ID" />
+              <button id="loadProfileBtn" type="button" class="border rounded-md px-3 text-sm">Load</button>
+            </div>
+          </div>
+
+          <form id="updateForm" class="space-y-4">
+            <div class="grid sm:grid-cols-3 gap-3" id="updCascade"></div>
+            <div>
+              <label class="text-xs text-slate-500">Clinic</label>
+              <select id="updClinic" class="w-full border rounded-md px-3 py-2 text-sm"></select>
+            </div>
+            <input id="updName" class="w-full border rounded-md px-3 py-2 text-sm" placeholder="Name" />
+            <input id="updSpecialization" class="w-full border rounded-md px-3 py-2 text-sm" placeholder="Specialization" />
+            <textarea id="updBio" rows="2" class="w-full border rounded-md px-3 py-2 text-sm" placeholder="Bio"></textarea>
+            <button class="bg-accent text-white rounded-md px-4 py-2 text-sm">Save update</button>
+          </form>
+        </div>
+
+        <!-- SETUP -->
+        <div id="panel-setup" class="panel hidden bg-white border rounded-xl p-5 space-y-4">
+          <h2 class="font-semibold">Admin: create location + clinic</h2>
+          <div class="grid sm:grid-cols-[1fr_1fr_auto] gap-2">
+            <input id="adminEmail" type="email" class="border rounded-md px-3 py-2 text-sm" placeholder="Admin email" />
+            <input id="adminPassword" type="password" class="border rounded-md px-3 py-2 text-sm" placeholder="Admin password" />
+            <button id="btnAdminLogin" class="border rounded-md text-sm px-3">Login</button>
+          </div>
+          <input id="adminToken" class="w-full border rounded-md px-3 py-2 text-sm" placeholder="ADMIN accessToken" />
+          <div>
+            <label class="text-xs text-slate-500">Access Token (auto-filled after login)</label>
+            <textarea id="adminAccessToken" rows="3" readonly class="w-full border rounded-md px-3 py-2 text-xs bg-slate-50"></textarea>
+          </div>
+          <div class="grid sm:grid-cols-2 gap-2">
+            <input id="setupRegione" value="Lombardia" class="border rounded-md px-3 py-2 text-sm" />
+            <button id="btnRegione" class="border rounded-md text-sm">Create Regione</button>
+            <input id="setupProvincia" value="Milano" class="border rounded-md px-3 py-2 text-sm" />
+            <button id="btnProvincia" class="border rounded-md text-sm">Create Provincia</button>
+            <input id="setupCitta" value="Milano" class="border rounded-md px-3 py-2 text-sm" />
+            <button id="btnCitta" class="border rounded-md text-sm">Create Città</button>
+            <input id="setupClinic" value="Clinica Test" class="border rounded-md px-3 py-2 text-sm" />
+            <button id="btnClinic" class="border rounded-md text-sm">Create Clinic</button>
+          </div>
+          <p class="text-xs text-slate-500">
+            regionId: <span id="sidRegion">—</span> ·
+            provinceId: <span id="sidProvince">—</span> ·
+            cityId: <span id="sidCity">—</span>
+          </p>
+        </div>
+      </section>
+
+      <aside class="bg-white border rounded-xl p-4 h-fit sticky top-4">
+        <div class="flex justify-between mb-2">
+          <h3 class="font-semibold text-sm">API response</h3>
+          <span id="statusPill" class="text-xs px-2 py-0.5 rounded-full bg-slate-100">idle</span>
+        </div>
+        <pre id="responseBox" class="text-xs bg-slate-900 text-slate-100 rounded-lg p-3 max-h-[75vh] overflow-auto">Ready.</pre>
+      </aside>
+    </main>
+
+    <script>
+      const $ = (id) => document.getElementById(id);
+      const api = () => $('apiBase').value.replace(/\/$/, '');
+
+      function showResponse(ok, data, label) {
+        $('statusPill').textContent = ok ? 'ok' : 'error';
+        $('statusPill').className =
+          'text-xs px-2 py-0.5 rounded-full ' + (ok ? 'bg-teal-100 text-teal-800' : 'bg-red-100 text-red-700');
+        $('responseBox').textContent = (label ? label + '\n\n' : '') + JSON.stringify(data, null, 2);
+      }
+
+      async function request(path, options = {}) {
+        const url = path.startsWith('http') ? path : `${api()}${path}`;
+        try {
+          const res = await fetch(url, options);
+          const json = await res.json().catch(() => ({ message: 'Non-JSON', status: res.status }));
+          showResponse(res.ok, json, `${options.method || 'GET'} ${url} → ${res.status}`);
+          return { ok: res.ok, json };
+        } catch (err) {
+          showResponse(false, { error: err.message });
+          return { ok: false, json: { error: err.message } };
+        }
+      }
+
+      function getAdminToken() {
+        return (
+          $('adminToken')?.value?.trim() ||
+          $('updateToken')?.value?.trim() ||
+          localStorage.getItem('adminToken') ||
+          ''
+        );
+      }
+
+      function adminAuthHeaders(extra = {}) {
+        const token = getAdminToken();
+        return token
+          ? { ...extra, Authorization: `Bearer ${token}` }
+          : { ...extra };
+      }
+
+      function splitCsv(v) {
+        return String(v || '')
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean);
+      }
+
+      function fillSelect(el, items, placeholder, map) {
+        el.innerHTML = '';
+        const ph = document.createElement('option');
+        ph.value = '';
+        ph.textContent = placeholder;
+        el.appendChild(ph);
+        (items || []).forEach((item) => {
+          const opt = document.createElement('option');
+          const m = map(item);
+          opt.value = m.value;
+          opt.textContent = m.label;
+          el.appendChild(opt);
+        });
+      }
+
+      /** Cascading Regione > Provincia > Città controller */
+      function createCascade(containerId, ids) {
+        const root = $(containerId);
+        root.innerHTML = `
+          <div>
+            <label class="text-xs text-slate-500">Regione</label>
+            <select id="${ids.region}" class="w-full border rounded-md px-3 py-2 text-sm"></select>
+          </div>
+          <div>
+            <label class="text-xs text-slate-500">Provincia</label>
+            <select id="${ids.province}" class="w-full border rounded-md px-3 py-2 text-sm" disabled></select>
+          </div>
+          <div>
+            <label class="text-xs text-slate-500">Città</label>
+            <select id="${ids.city}" class="w-full border rounded-md px-3 py-2 text-sm" disabled></select>
+          </div>`;
+
+        const regionEl = $(ids.region);
+        const provinceEl = $(ids.province);
+        const cityEl = $(ids.city);
+
+        async function loadRegions(selected) {
+          const { ok, json } = await request('/regioni', {
+            headers: adminAuthHeaders(),
+          });
+          if (!ok) return;
+          fillSelect(regionEl, json.data, 'Select Regione', (r) => ({ value: r.id, label: r.name }));
+          if (selected) regionEl.value = selected;
+        }
+
+        async function loadProvinces(regionId, selected) {
+          provinceEl.disabled = !regionId;
+          cityEl.disabled = true;
+          fillSelect(provinceEl, [], 'Select Provincia', (x) => x);
+          fillSelect(cityEl, [], 'Select Città', (x) => x);
+          if (!regionId) return;
+          const { ok, json } = await request(
+            `/province?regionId=${encodeURIComponent(regionId)}`,
+            { headers: adminAuthHeaders() },
+          );
+          if (!ok) return;
+          fillSelect(provinceEl, json.data, 'Select Provincia', (p) => ({ value: p.id, label: p.name }));
+          if (selected) provinceEl.value = selected;
+        }
+
+        async function loadCities(provinceId, selected) {
+          cityEl.disabled = !provinceId;
+          fillSelect(cityEl, [], 'Select Città', (x) => x);
+          if (!provinceId) return;
+          const { ok, json } = await request(
+            `/citta?provinceId=${encodeURIComponent(provinceId)}`,
+            { headers: adminAuthHeaders() },
+          );
+          if (!ok) return;
+          fillSelect(cityEl, json.data, 'Select Città', (c) => ({ value: c.id, label: c.name }));
+          if (selected) cityEl.value = selected;
+        }
+
+        regionEl.addEventListener('change', () => {
+          loadProvinces(regionEl.value);
+          if (ids.onChange) ids.onChange();
+        });
+        provinceEl.addEventListener('change', () => {
+          loadCities(provinceEl.value);
+          if (ids.onChange) ids.onChange();
+        });
+        cityEl.addEventListener('change', () => {
+          if (ids.onChange) ids.onChange();
+        });
+
+        return {
+          loadRegions,
+          loadProvinces,
+          loadCities,
+          values: () => ({
+            regionId: regionEl.value || null,
+            provinceId: provinceEl.value || null,
+            cityId: cityEl.value || null,
+          }),
+          async set(regionId, provinceId, cityId) {
+            await loadRegions(regionId);
+            if (regionId) await loadProvinces(regionId, provinceId);
+            if (provinceId) await loadCities(provinceId, cityId);
+          },
+        };
+      }
+
+      async function loadClinics(cityId, selectEl, selected) {
+        fillSelect(selectEl, [], cityId ? 'Select clinic' : 'Pick Città first', (x) => x);
+        if (!cityId) return;
+        const { ok, json } = await request(`/clinics?cityId=${encodeURIComponent(cityId)}`);
+        if (!ok) return;
+        const list = (json.data || []).filter((c) => !cityId || c.cityId === cityId);
+        fillSelect(selectEl, list, 'Select clinic', (c) => ({ value: c.id, label: c.name }));
+        if (selected) selectEl.value = selected;
+      }
+
+      // Tabs
+      document.querySelectorAll('.tab').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.tab').forEach((b) => b.classList.remove('active'));
+          btn.classList.add('active');
+          document.querySelectorAll('.panel').forEach((p) => p.classList.add('hidden'));
+          $(`panel-${btn.dataset.tab}`).classList.remove('hidden');
+        });
+      });
+
+      // ---- Search cascade ----
+      let searchCascade;
+      let searchTimer;
+
+      async function runSearch() {
+        const v = searchCascade.values();
+        const params = new URLSearchParams();
+        if (v.regionId) params.set('regionId', v.regionId);
+        if (v.provinceId) params.set('provinceId', v.provinceId);
+        if (v.cityId) params.set('cityId', v.cityId);
+        if ($('searchName').value.trim()) params.set('search', $('searchName').value.trim());
+        params.set('limit', '20');
+
+        const useAdmin = $('searchAllStatus').checked;
+        let path;
+        if (useAdmin) {
+          path = `/surgeon-profiles/admin?${params}`;
+        } else {
+          // public suggestions: APPROVED + ACTIVE by default in service
+          path = `/surgeon-profiles/search?${params}`;
+        }
+
+        const requestOptions = useAdmin
+          ? { headers: adminAuthHeaders() }
+          : {};
+        const { ok, json } = await request(path, requestOptions);
+        const box = $('suggestions');
+        box.innerHTML = '';
+        if (!ok) return;
+
+        const list = Array.isArray(json.data) ? json.data : [];
+        if (!list.length) {
+          box.innerHTML =
+            '<p class="text-sm text-slate-500">No surgeons for this location. Tip: new registrations are PENDING — enable “Include PENDING”.</p>';
+          return;
+        }
+
+        list.forEach((s) => {
+          const location =
+            s.locationLabel ||
+            [s.region || s.regione, s.province || s.provincia, s.city || s.citta]
+              .filter(Boolean)
+              .join(' › ');
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'w-full text-left border rounded-lg p-3 hover:bg-slate-50';
+          btn.innerHTML = `
+            <div class="font-medium text-sm">${s.name}</div>
+            <div class="text-xs text-slate-500">${s.specialization || ''} · ${location || '—'}</div>
+            <div class="text-[11px] text-teal-700 mt-1">${s.id}</div>
+            <div class="text-[11px] text-slate-400">${s.status || ''} / ${s.paymentStatus || ''}</div>`;
+          btn.onclick = () => {
+            $('updateProfileId').value = s.id;
+            document.querySelector('[data-tab="update"]').click();
+          };
+          box.appendChild(btn);
+        });
+      }
+
+      function scheduleSearch() {
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(runSearch, 280);
+      }
+
+      // ---- Register cascade ----
+      let regCascade;
+      // ---- Update cascade ----
+      let updCascade;
+
+      $('searchBtn').addEventListener('click', runSearch);
+      $('searchName').addEventListener('input', scheduleSearch);
+      $('searchAllStatus').addEventListener('change', runSearch);
+
+      $('registerForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const form = e.target;
+        const loc = regCascade.values();
+        if (!loc.cityId) {
+          alert('Select Regione › Provincia › Città');
+          return;
+        }
+        if (!$('regClinic').value) {
+          alert('Select a clinic');
+          return;
+        }
+
+        const fd = new FormData();
+        fd.append('name', form.name.value.trim());
+        fd.append('email', form.email.value.trim());
+        fd.append('password', form.password.value);
+        fd.append('phone', form.phone.value.trim());
+        fd.append('cityId', loc.cityId);
+        fd.append('clinicId', $('regClinic').value);
+        fd.append('specialization', form.specialization.value.trim());
+        fd.append('experienceYears', form.experienceYears.value);
+        fd.append('language', form.language.value.trim());
+        fd.append('patientApproach', form.patientApproach.value.trim());
+        if (form.availability.value) fd.append('availability', form.availability.value.trim());
+        fd.append('education', JSON.stringify(splitCsv(form.educationText.value)));
+        fd.append('areasExpertise', JSON.stringify(splitCsv(form.expertiseText.value)));
+        fd.append('certifications', JSON.stringify(splitCsv(form.certText.value)));
+        fd.append(
+          'procedures',
+          JSON.stringify([{ title: 'General', treatments: splitCsv(form.expertiseText.value) }]),
+        );
+        if (form.avatarUrl.files[0]) fd.append('avatarUrl', form.avatarUrl.files[0]);
+        [...form.images.files].forEach((f) => fd.append('images', f));
+
+        const { ok, json } = await request('/surgeon-profiles', { method: 'POST', body: fd });
+        if (ok && json.data?.profile?.id) {
+          $('updateProfileId').value = json.data.profile.id;
+          if (json.data.accessToken) $('updateToken').value = json.data.accessToken;
+        }
+      });
+
+      $('loadProfileBtn').addEventListener('click', async () => {
+        const id = $('updateProfileId').value.trim();
+        if (!id) return;
+        const { ok, json } = await request(`/surgeon-profiles/${id}`);
+        if (!ok || !json.data) return;
+        const p = json.data;
+        $('updName').value = p.name || '';
+        $('updSpecialization').value = p.specialization || '';
+        $('updBio').value = p.bio || '';
+        const regionId = p.city?.province?.region?.id;
+        const provinceId = p.city?.province?.id;
+        const cityId = p.city?.id || p.cityId;
+        await updCascade.set(regionId, provinceId, cityId);
+        await loadClinics(cityId, $('updClinic'), p.clinicId || p.clinic?.id);
+      });
+
+      $('updateForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = $('updateProfileId').value.trim();
+        const token = $('updateToken').value.trim();
+        if (!id || !token) {
+          alert('Profile ID + token required');
+          return;
+        }
+        const loc = updCascade.values();
+        const fd = new FormData();
+        if ($('updName').value.trim()) fd.append('name', $('updName').value.trim());
+        if ($('updSpecialization').value.trim()) fd.append('specialization', $('updSpecialization').value.trim());
+        if ($('updBio').value.trim()) fd.append('bio', $('updBio').value.trim());
+        if (loc.cityId) fd.append('cityId', loc.cityId);
+        if ($('updClinic').value) fd.append('clinicId', $('updClinic').value);
+
+        await request(`/surgeon-profiles/update/${id}`, {
+          method: 'PATCH',
+          headers: { Authorization: `Bearer ${token}` },
+          body: fd,
+        });
+      });
+
+      // Setup admin
+      function adminHeaders() {
+        const token = $('adminToken').value.trim();
+        if (token) {
+          localStorage.setItem('adminToken', token);
+          if ($('adminAccessToken')) {
+            $('adminAccessToken').value = token;
+          }
+        }
+        return {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        };
+      }
+
+      $('btnAdminLogin').onclick = async () => {
+        const email = $('adminEmail').value.trim();
+        const password = $('adminPassword').value;
+        if (!email || !password) {
+          alert('Admin email and password required');
+          return;
+        }
+
+        const { ok, json } = await request('/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        });
+
+        if (!ok) return;
+
+        const token =
+          json?.data?.tokens?.accessToken ||
+          json?.data?.accessToken ||
+          json?.data?.token ||
+          '';
+
+        if (!token) {
+          alert('Login succeeded but accessToken path did not match response');
+          return;
+        }
+
+        $('adminToken').value = token;
+        $('adminAccessToken').value = token;
+        localStorage.setItem('adminToken', token);
+      };
+      $('btnRegione').onclick = async () => {
+        const { ok, json } = await request('/regioni', {
+          method: 'POST',
+          headers: adminHeaders(),
+          body: JSON.stringify({ name: $('setupRegione').value.trim() }),
+        });
+        if (ok) {
+          $('sidRegion').textContent = json.data.id;
+          localStorage.setItem('sidRegion', json.data.id);
+          searchCascade.loadRegions();
+          regCascade.loadRegions();
+          updCascade.loadRegions();
+        }
+      };
+      $('btnProvincia').onclick = async () => {
+        const regionId = localStorage.getItem('sidRegion') || $('sidRegion').textContent;
+        const { ok, json } = await request('/province', {
+          method: 'POST',
+          headers: adminHeaders(),
+          body: JSON.stringify({ name: $('setupProvincia').value.trim(), regionId }),
+        });
+        if (ok) {
+          $('sidProvince').textContent = json.data.id;
+          localStorage.setItem('sidProvince', json.data.id);
+        }
+      };
+      $('btnCitta').onclick = async () => {
+        const provinceId = localStorage.getItem('sidProvince') || $('sidProvince').textContent;
+        const { ok, json } = await request('/citta', {
+          method: 'POST',
+          headers: adminHeaders(),
+          body: JSON.stringify({ name: $('setupCitta').value.trim(), provinceId }),
+        });
+        if (ok) {
+          $('sidCity').textContent = json.data.id;
+          localStorage.setItem('sidCity', json.data.id);
+        }
+      };
+      $('btnClinic').onclick = async () => {
+        const cityId = localStorage.getItem('sidCity') || $('sidCity').textContent;
+        await request('/clinics', {
+          method: 'POST',
+          headers: adminHeaders(),
+          body: JSON.stringify({ name: $('setupClinic').value.trim(), cityId }),
+        });
+      };
+
+      // init
+      searchCascade = createCascade('searchCascade', {
+        region: 'sRegion',
+        province: 'sProvince',
+        city: 'sCity',
+        onChange: scheduleSearch,
+      });
+      regCascade = createCascade('regCascade', {
+        region: 'rRegion',
+        province: 'rProvince',
+        city: 'rCity',
+        onChange: () => loadClinics(regCascade.values().cityId, $('regClinic')),
+      });
+      updCascade = createCascade('updCascade', {
+        region: 'uRegion',
+        province: 'uProvince',
+        city: 'uCity',
+        onChange: () => loadClinics(updCascade.values().cityId, $('updClinic')),
+      });
+
+      ['sidRegion', 'sidProvince', 'sidCity'].forEach((k) => {
+        const v = localStorage.getItem(k);
+        if (v) $(k).textContent = v;
+      });
+
+      const savedToken = localStorage.getItem('adminToken');
+      if (savedToken) {
+        $('adminToken').value = savedToken;
+        if ($('adminAccessToken')) {
+          $('adminAccessToken').value = savedToken;
+        }
+      }
+
+      searchCascade.loadRegions();
+      regCascade.loadRegions();
+      updCascade.loadRegions();
+    </script>
+  </body>
+</html>

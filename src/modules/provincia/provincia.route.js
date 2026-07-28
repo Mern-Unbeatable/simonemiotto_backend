@@ -22,9 +22,15 @@ router.post(
   controller.create,
 );
 
-router.get('/', controller.getAll);
+router.get('/', authenticate, authorize(['ADMIN']), controller.getAll);
 
-router.get('/:id', validateParams(IdParamSchema), controller.getById);
+router.get(
+  '/:id',
+  authenticate,
+  authorize(['ADMIN']),
+  validateParams(IdParamSchema),
+  controller.getById,
+);
 
 router.patch(
   '/:id',

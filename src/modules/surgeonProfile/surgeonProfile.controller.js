@@ -57,8 +57,8 @@ class SurgeonProfileController {
   });
 
   getProfilesBySearch = asyncHandler(async (req, res) => {
-    const { search } = new filterSurgeonDTO(req.query);
-    const result = await this.profileService.searchSurgeonsByName(search);
+    const filterDTO = new filterSurgeonDTO(req.query);
+    const result = await this.profileService.searchSurgeonsByName(filterDTO);
     res.sendSuccess(result, 'Surgeons profiles retrieved successfully');
   });
 

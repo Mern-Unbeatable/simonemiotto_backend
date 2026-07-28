@@ -3,6 +3,7 @@ const { AppError } = require('../../middlewares/errorHandler');
 const bcrypt = require('bcryptjs');
 const { generateTokenPair } = require('../../utils/jwt');
 const emailEmitter = require('../../utils/eventEmitter');
+const { buildLocationWhere } = require('./surgeonProfile.dto');
 
 class surgeonProfileService {
   createSlug(value) {
@@ -51,16 +52,23 @@ class surgeonProfileService {
     }
 
     const [city, clinic] = await Promise.all([
-      prisma.city.findUnique({ where: { id: cityId } }),
+      prisma.city.findUnique({
+        where: { id: cityId },
+        include: { province: { include: { region: true } } },
+      }),
       prisma.clinic.findUnique({ where: { id: clinicId } }),
     ]);
 
     if (!city) {
-      throw new AppError('City not found', 404);
+      throw new AppError('Città not found', 404);
     }
 
     if (!clinic) {
       throw new AppError('Clinic not found', 404);
+    }
+
+    if (clinic.cityId && clinic.cityId !== cityId) {
+      throw new AppError('Clinic does not belong to selected Città', 400);
     }
 
     const existingSlug = await prisma.surgeonProfile.findUnique({
@@ -125,8 +133,17 @@ class surgeonProfileService {
           name: user.name,
           email: user.email,
           role: user.role,
-          verificationStatus: user.verificationStatus,
-          paymentStatus: user.paymentStatus,
+        },
+        profile: {
+          id: profile.id,
+          slug: profile.slug,
+          cityId: profile.cityId,
+          clinicId: profile.clinicId,
+          location: {
+            citta: city.name,
+            provincia: city.province?.name || null,
+            regione: city.province?.region?.name || null,
+          },
         },
         accessToken: tokens.accessToken,
         refreshToken: tokens.refreshToken,
@@ -150,7 +167,6 @@ class surgeonProfileService {
       limit,
       clinic,
       specialization,
-      city,
       status = 'APPROVED',
       paymentStatus = 'ACTIVE',
     } = filterDTO;
@@ -193,9 +209,10 @@ class surgeonProfileService {
       whereCondition.push({ clinic: { slug: clinic } });
     }
 
-    // 4. Filter: City via unique slug reference matching
-    if (city) {
-      whereCondition.push({ city: { slug: city } });
+    // 4. Filter: Regione > Provincia > Città
+    const locationWhere = buildLocationWhere(filterDTO);
+    if (locationWhere) {
+      whereCondition.push(locationWhere);
     }
 
     // 5. Filter: Payment Status
@@ -283,6 +300,9 @@ class surgeonProfileService {
         city: profile.city?.name || null,
         province: profile.city?.province?.name || null,
         region: profile.city?.province?.region?.name || null,
+        cityId: profile.city?.id || null,
+        provinceId: profile.city?.province?.id || null,
+        regionId: profile.city?.province?.region?.id || null,
         clinic: profile.clinic?.name || null,
         availability: profile.availability || null,
         address: profile.address || null,
@@ -311,47 +331,91 @@ class surgeonProfileService {
     };
   }
 
-  async searchSurgeonsByName(searchString, limit = 10) {
-    const queryLimit = parseInt(limit, 10) || 10;
-    const buildWhereClause = {};
+  async searchSurgeonsByName(filterDTO = {}) {
+    const {
+      search: searchString,
+      limit = 10,
+      status = 'APPROVED',
+      paymentStatus = 'ACTIVE',
+    } = filterDTO;
 
-    if (searchString && searchString.trim() !== '') {
-      const cleanSearch = searchString.trim();
-      buildWhereClause.name = {
-        contains: cleanSearch,
-        mode: 'insensitive',
-      };
+    const queryLimit = parseInt(limit, 10) || 10;
+    const whereCondition = [];
+
+    if (searchString && String(searchString).trim() !== '') {
+      const cleanSearch = String(searchString).trim();
+      whereCondition.push({
+        OR: [
+          { name: { contains: cleanSearch, mode: 'insensitive' } },
+          { specialization: { contains: cleanSearch, mode: 'insensitive' } },
+          {
+            city: { name: { contains: cleanSearch, mode: 'insensitive' } },
+          },
+          {
+            city: {
+              province: {
+                name: { contains: cleanSearch, mode: 'insensitive' },
+              },
+            },
+          },
+          {
+            city: {
+              province: {
+                region: {
+                  name: { contains: cleanSearch, mode: 'insensitive' },
+                },
+              },
+            },
+          },
+        ],
+      });
     }
 
-    buildWhereClause.status = 'APPROVED';
-    buildWhereClause.paymentStatus = 'ACTIVE';
+    const locationWhere = buildLocationWhere(filterDTO);
+    if (locationWhere) {
+      whereCondition.push(locationWhere);
+    }
+
+    if (status) {
+      whereCondition.push({ status });
+    }
+
+    if (paymentStatus) {
+      whereCondition.push({ paymentStatus });
+    }
+
+    const finalWhere = whereCondition.length > 0 ? { AND: whereCondition } : {};
 
     const result = await prisma.surgeonProfile.findMany({
-      where: buildWhereClause,
+      where: finalWhere,
       take: queryLimit,
       select: {
         id: true,
         name: true,
         slug: true,
+        specialization: true,
+        status: true,
+        paymentStatus: true,
         city: {
           select: {
+            id: true,
             name: true,
             slug: true,
             province: {
               select: {
+                id: true,
                 name: true,
                 slug: true,
                 region: {
-                  select: { name: true, slug: true },
+                  select: { id: true, name: true, slug: true },
                 },
               },
             },
           },
         },
         clinic: {
-          select: { name: true, slug: true },
+          select: { id: true, name: true, slug: true },
         },
-        specialization: true,
         currentSubscription: {
           select: {
             tier: {
@@ -379,9 +443,22 @@ class surgeonProfileService {
       name: profile.name,
       slug: profile.slug,
       specialization: profile.specialization,
-      city: profile.city || null,
+      status: profile.status,
+      paymentStatus: profile.paymentStatus,
+      cityId: profile.city?.id || null,
+      provinceId: profile.city?.province?.id || null,
+      regionId: profile.city?.province?.region?.id || null,
+      citta: profile.city?.name || null,
+      provincia: profile.city?.province?.name || null,
+      regione: profile.city?.province?.region?.name || null,
+      locationLabel: [
+        profile.city?.province?.region?.name,
+        profile.city?.province?.name,
+        profile.city?.name,
+      ]
+        .filter(Boolean)
+        .join(' › '),
       clinic: profile.clinic || null,
-      // subscriptionPlan: profile.currentSubscription?.tier.name || null,
     }));
   }
 
@@ -394,7 +471,6 @@ class surgeonProfileService {
       paymentStatus,
       clinic,
       specialization,
-      city,
       status,
     } = filterDTO;
 
@@ -418,8 +494,9 @@ class surgeonProfileService {
       whereCondition.push({ clinic: { slug: clinic } });
     }
 
-    if (city) {
-      whereCondition.push({ city: { slug: city } });
+    const locationWhere = buildLocationWhere(filterDTO);
+    if (locationWhere) {
+      whereCondition.push(locationWhere);
     }
 
     if (paymentStatus) {
@@ -493,6 +570,9 @@ class surgeonProfileService {
         city: profile.city?.name || null,
         province: profile.city?.province?.name || null,
         region: profile.city?.province?.region?.name || null,
+        cityId: profile.city?.id || null,
+        provinceId: profile.city?.province?.id || null,
+        regionId: profile.city?.province?.region?.id || null,
         clinic: profile.clinic?.name || null,
         availability: profile.availability || null,
         address: profile.address || null,
@@ -527,7 +607,13 @@ class surgeonProfileService {
     const profile = await prisma.surgeonProfile.findUnique({
       where: { id },
       include: {
-        city: true,
+        city: {
+          include: {
+            province: {
+              include: { region: true },
+            },
+          },
+        },
         clinic: true,
         user: {
           select: {
@@ -536,17 +622,23 @@ class surgeonProfileService {
             email: true,
             phone: true,
             avatarUrl: true,
-            phone: true,
           },
         },
         surgeonPhotos: {
           orderBy: { order: 'asc' },
         },
+        currentSubscription: {
+          include: { tier: true },
+        },
+        reviews: {
+          take: 10,
+          orderBy: { createdAt: 'desc' },
+        },
       },
     });
 
     if (!profile) {
-      throw new AppError('Vendor profile not found', 404);
+      throw new AppError('Surgeon profile not found', 404);
     }
 
     return profile;
@@ -556,9 +648,15 @@ class surgeonProfileService {
     const profile = await prisma.surgeonProfile.findUnique({
       where: { userId },
       include: {
-        city: true,
+        city: {
+          include: {
+            province: {
+              include: { region: true },
+            },
+          },
+        },
         clinic: true,
-        user: {
+        user: { 
           select: {
             id: true,
             name: true,
