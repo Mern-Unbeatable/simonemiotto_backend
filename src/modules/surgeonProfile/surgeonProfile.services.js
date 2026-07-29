@@ -492,26 +492,26 @@ class surgeonProfileService {
   }
 
   async getPublicSpecializations(search, limit = 100) {
-    const where = search
-      ? {
-          specialization: {
-            contains: search,
-            mode: 'insensitive',
-          },
-        }
-      : {};
+    const SPECIALIZATIONS = [
+      'Cardiac Surgery',
+      'Neurosurgery',
+      'Orthopedics',
+      'Plastic Surgery',
+      'General Surgery',
+      'Vascular Surgery',
+      'Urology',
+      'Gynecology',
+      'Ophthalmology',
+      'ENT Department',
+    ];
 
-    const rows = await prisma.surgeonProfile.findMany({
-      where,
-      select: { specialization: true },
-      distinct: ['specialization'],
-      orderBy: { specialization: 'asc' },
-      take: parseInt(limit, 10) || 100,
-    });
+    const query = search ? String(search).trim().toLowerCase() : '';
+    const filtered = query
+      ? SPECIALIZATIONS.filter((item) => item.toLowerCase().includes(query))
+      : SPECIALIZATIONS;
 
-    return rows
-      .map((r) => r.specialization)
-      .filter(Boolean);
+    const take = parseInt(limit, 10) || 100;
+    return filtered.slice(0, take);
   }
 
   async getSurgeonProfilesAdmin(filterDTO) {
