@@ -165,3 +165,4 @@ newrelic.js
 !.eslintrc.js
 !.prettierrc
 !jest.config.js
+.getaibd/

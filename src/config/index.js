@@ -66,7 +66,7 @@ const config = {
     refreshSecret: envVars.JWT_REFRESH_SECRET,
   },
   cors: {
-    allowedOrigins: envVars.ALLOWED_ORIGINS.split(','),
+    allowedOrigins: envVars.ALLOWED_ORIGINS.split(',').map((o) => o.trim()),
   },
   upload: {
     maxFileSize: envVars.MAX_FILE_SIZE,

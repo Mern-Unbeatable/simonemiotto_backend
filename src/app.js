@@ -43,13 +43,15 @@ app.use(
   cors({
     origin:
       config.nodeEnv === 'production'
-        ? config.allowedOrigins
+        ? config.cors.allowedOrigins
         : [
             'http://localhost:5173',
             'http://localhost:5174',
             'http://localhost:3000',
             'http://localhost:3001',
             'https://simonemiotto.maktechgroup.tech',
+            'https://trustsurgery-ita.com',
+            'https://www.trustsurgery-ita.com',
           ],
     credentials: true,
   }),
