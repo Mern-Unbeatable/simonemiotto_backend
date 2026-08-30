@@ -5,29 +5,30 @@ const config = require('../config');
 
 class EmailService {
   constructor() {
+    const host = process.env.SMTP_HOST || config.mailchimp.smtp.host;
+    const port = Number(process.env.SMTP_PORT || 587);
+    const user = process.env.SMTP_USER || config.mailchimp.smtp.user;
+    const pass = process.env.SMTP_PASS || config.mailchimp.smtp.password;
+    const from = process.env.SMTP_FROM || 'no-reply@localhost';
+
     this.transporter = nodemailer.createTransport({
-      service: 'gmail',
+      host,
+      port,
+      secure: port === 465,
       auth: {
-        user: 'mdrakibulhasan12346@gmail.com',
-        pass: 'rbyz nvgi eppd rwqm',
+        user,
+        pass,
       },
     });
 
-    // this.transporter = nodemailer.createTransport({
-    //   host: config.mailchimp.smtp.host,
-    //   port: process.env.SMTP_PORT,
-    //   secure: false,
-    //   auth: {
-    //     user: process.env.SMTP_USER,
-    //     pass: process.env.SMTP_PASS,
-    //   },
-    // });
+
+    this.fromAddress = from;
   }
 
   async sendMail(to, subject, text, html) {
     try {
       const mailOptions = {
-        from: `"TrustSurgery" <mdrakibulhasan12346@gmail.com>`,
+        from: this.fromAddress,
         to,
         subject,
         text,
@@ -46,5 +47,7 @@ class EmailService {
     }
   }
 }
+
+
 
 module.exports = EmailService;
