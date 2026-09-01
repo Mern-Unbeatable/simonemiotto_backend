@@ -17,6 +17,7 @@ const promoRoutes = require('../modules/promo/promo.route');
 const applySubscriptionRoutes = require('../modules/applySubscription/applySubscription.route');
 const dashboardRoutes = require('../modules/dashboard/dashboard.route');
 const reviewsRoutes = require('../modules/reviews/reviews.route');
+const settingsRoutes = require('../modules/settings/settings.route');
 
 const apiDocsHandler = require('../modules/docs/apiDocsHandler');
 
@@ -53,4 +54,5 @@ router.use('/promo-code', promoRoutes);
 router.use('/subscription', applySubscriptionRoutes);
 router.use('/dashboard', dashboardRoutes);
 router.use('/reviews', reviewsRoutes);
+router.use('/settings', settingsRoutes);
 module.exports = router;

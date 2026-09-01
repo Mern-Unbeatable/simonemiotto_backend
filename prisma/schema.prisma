@@ -372,3 +372,15 @@ model Review {
   @@index([patientId])
   @@index([surgeonProfileId])
 }
+
+// -----------------------------------------------------------------
+// System Settings (Admin Configurable)
+// -----------------------------------------------------------------
+model SystemSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
