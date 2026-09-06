@@ -332,6 +332,8 @@ class surgeonProfileService {
         thumbnailImage: profile.user.avatarUrl
           ? profile.user.avatarUrl
           : profile.surgeonPhotos?.[0]?.url || null,
+        verifiedBadge: profile.currentSubscription?.tier?.verifiedBadge || false,
+        subscriptionTierName: profile.currentSubscription?.tier?.name || null,
       };
     });
 
