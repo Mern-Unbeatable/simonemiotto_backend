@@ -832,6 +832,19 @@ class surgeonProfileService {
     if (fileUrls.certificateUrls)
       dtoData.certificateUrls = fileUrls.certificateUrls;
 
+    let deleteImageIds = dtoData.deleteImageIds;
+    if (typeof deleteImageIds === 'string') {
+      try {
+        deleteImageIds = JSON.parse(deleteImageIds);
+      } catch {
+        deleteImageIds = [];
+      }
+    }
+    if (!Array.isArray(deleteImageIds)) {
+      deleteImageIds = [];
+    }
+    delete dtoData.deleteImageIds;
+
     delete dtoData.id;
     delete dtoData.userId;
     delete dtoData.regionId;
@@ -844,6 +857,15 @@ class surgeonProfileService {
         await tx.user.update({
           where: { id: existingProfile.userId },
           data: userData,
+        });
+      }
+
+      if (deleteImageIds.length > 0) {
+        await tx.surgeonPhotos.deleteMany({
+          where: {
+            surgeonId: id,
+            id: { in: deleteImageIds },
+          },
         });
       }
 

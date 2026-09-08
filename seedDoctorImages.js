@@ -2,12 +2,14 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 const AVATARS = [
+  // Male doctors
   { email: 'marco.bianchi@example.com',    avatar: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=400&h=400&fit=crop&crop=face' },
-  { email: 'laura.romano@example.com',     avatar: 'https://images.unsplash.com/photo-1594824476967-48c8b964ac31?w=400&h=400&fit=crop&crop=face' },
   { email: 'alessandro.verdi@example.com', avatar: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=400&h=400&fit=crop&crop=face' },
-  { email: 'giulia.neri@example.com',      avatar: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=400&h=400&fit=crop&crop=face' },
-  { email: 'francesco.esposito@example.com', avatar: 'https://images.unsplash.com/photo-1638202993928-7267aad84c31?w=400&h=400&fit=crop&crop=face' },
-  { email: 'marta.colombo@example.com',    avatar: 'https://images.unsplash.com/photo-1537368910025-700350fe46c7?w=400&h=400&fit=crop&crop=face' },
+  { email: 'francesco.esposito@example.com', avatar: 'https://images.unsplash.com/photo-1537368910025-700350fe46c7?w=400&h=400&fit=crop&crop=face' },
+  // Female doctors
+  { email: 'laura.romano@example.com',     avatar: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=400&h=400&fit=crop&crop=face' },
+  { email: 'giulia.neri@example.com',      avatar: 'https://images.unsplash.com/photo-1594824476967-48c8b964ac31?w=400&h=400&fit=crop&crop=face' },
+  { email: 'marta.colombo@example.com',    avatar: 'https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=400&h=400&fit=crop&crop=face' },
 ];
 
 const GALLERY = [

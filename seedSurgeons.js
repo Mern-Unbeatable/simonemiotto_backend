@@ -36,7 +36,7 @@ const SUBSCRIPTION_PLANS = [
     description: 'Per professionisti che vogliono massima visibilità',
     durationDays: 30,
     price: 99.99,
-    features: ['Profilo premium', 'Foto illimitate', 'Supporto telefonico', 'Analytics avanzati', 'Posizione in evidenza'],
+    features: ['Profilo chirurgo completo', 'Foto illimitate', 'Supporto telefonico', 'Analytics avanzati', 'Posizione in evidenza'],
     verifiedBadge: false,
     autoRenew: true,
   },
