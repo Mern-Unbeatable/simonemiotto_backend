@@ -3,6 +3,7 @@ const { AppError } = require('../../middlewares/errorHandler');
 const bcrypt = require('bcryptjs');
 const { generateTokenPair } = require('../../utils/jwt');
 const emailEmitter = require('../../utils/eventEmitter');
+const { sendSurgeonContractIfEligible } = require('../email/contractMailer');
 const { buildLocationWhere } = require('./surgeonProfile.dto');
 
 class surgeonProfileService {
@@ -495,16 +496,16 @@ class surgeonProfileService {
 
   async getPublicSpecializations(search, limit = 100) {
     const SPECIALIZATIONS = [
-      'Cardiac Surgery',
-      'Neurosurgery',
-      'Orthopedics',
-      'Plastic Surgery',
-      'General Surgery',
-      'Vascular Surgery',
-      'Urology',
-      'Gynecology',
-      'Ophthalmology',
-      'ENT Department',
+      'Cardiochirurgia',
+      'Neurochirurgia',
+      'Ortopedia',
+      'Chirurgia Plastica',
+      'Chirurgia Generale',
+      'Chirurgia Vascolare',
+      'Urologia',
+      'Ginecologia',
+      'Oftalmologia',
+      'Otorinolaringoiatria',
     ];
 
     const query = search ? String(search).trim().toLowerCase() : '';
@@ -903,7 +904,7 @@ class surgeonProfileService {
 
   async updateVendorStatus(id, data) {
     const profile = await this.getProfileById(id);
-    const result = prisma.surgeonProfile.update({
+    const result = await prisma.surgeonProfile.update({
       where: { id },
       data: { status: data.status, paymentStatus: data.paymentStatus },
     });
@@ -922,6 +923,15 @@ class surgeonProfileService {
       userData,
       statusUpdateDetails,
     });
+
+    if (data.status === 'APPROVED') {
+      try {
+        await sendSurgeonContractIfEligible(id);
+      } catch (contractError) {
+        console.error('Failed to send surgeon contract after approval:', contractError);
+      }
+    }
+
     return result;
   }
 

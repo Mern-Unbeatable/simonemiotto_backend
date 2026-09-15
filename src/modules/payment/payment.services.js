@@ -1,6 +1,7 @@
 const Stripe = require('stripe');
 const { prisma } = require('../../config/database');
 const emailEmitter = require('../../utils/eventEmitter');
+const { sendSurgeonContractIfEligible } = require('../email/contractMailer');
 const { AppError } = require('../../middlewares/errorHandler');
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -169,6 +170,16 @@ class PaymentService {
         renewalDate: endDate.toDateString(),
       },
     });
+
+    try {
+      await sendSurgeonContractIfEligible(meta.surgeonProfileId, {
+        planName: meta.subscriptionPlanName,
+        amount: (session.amount_total || 0) / 100,
+        currency: (session.currency || 'eur').toUpperCase(),
+      });
+    } catch (contractError) {
+      console.error('[Webhook] Failed to send surgeon contract email:', contractError);
+    }
 
     console.log(
       `[Webhook] Successfully activated subscription ${meta.subscriptionTierId} for surgeon ${meta.surgeonProfileId}`,

@@ -11,6 +11,7 @@ const { AppError } = require('../../middlewares/errorHandler');
 const AuthRepository = require('./auth.repository');
 const { UserResponseDTO, AuthResponseDTO } = require('./auth.dto');
 const EmailService = require('../../utils/email');
+const { sendUserRegistrationContract } = require('../email/contractMailer');
 
 const emailService = new EmailService();
 
@@ -166,6 +167,13 @@ class AuthService {
       ]);
 
       logger.info(`User email verified successfully: ${verifiedUser.email}`);
+
+      try {
+        await sendUserRegistrationContract(verifiedUser);
+      } catch (contractError) {
+        logger.error('Failed to send user registration contract:', contractError);
+      }
+
       return new AuthResponseDTO(verifiedUser, tokens);
     } catch (error) {
       logger.error('Registration OTP verification failed:', error);
